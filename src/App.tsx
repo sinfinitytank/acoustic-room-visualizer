@@ -1,122 +1,55 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import Scene from './components/Scene'
+import type { Display } from './components/Scene'
+import { Keyboard, NumberField, ObjectEditor, RoomEditor, Section, Toggle } from './components/Controls'
+import { useStudio } from './domain/store'
+import { bands, distanceLabel, ft, walls } from './domain/model'
+import type { Anchor } from './domain/model'
+import { computePaths, rayStatus, resolveListener } from './domain/acoustics'
+import type { RaySettings } from './domain/acoustics'
+import LibraryPanel from './components/LibraryPanel'
+import HistoryPanel from './components/HistoryPanel'
+import FilesPanel from './components/FilesPanel'
 import './App.css'
-
+const defaultDisplay: Display = { transparent: true, grid: true, axes: false, dimensions: false, wallMeasures: false, custom: true, measurements: false, labels: false, panel: true, bass: true }
 function App() {
-  const [count, setCount] = useState(0)
-
-  return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
-  )
+  const { design: d, selected, select, commit, patch, place, remove, duplicate, resetObject, undo, redo, past, future, storageError, saveMilestone, persist } = useStudio()
+  const [tab, setTab] = useState('Design'), [collapsed, setCollapsed] = useState(false), [unit, setUnit] = useState<'ft' | 'm'>('ft')
+  const [display, setDisplay] = useState<Display>(defaultDisplay), [view, setView] = useState('Perspective'), [cameraRevision, setCameraRevision] = useState(0)
+  const [mode, setMode] = useState<'translate' | 'rotate'>('translate'), [snap, setSnap] = useState(0.1524), [snapEnabled, setSnapEnabled] = useState(true)
+  const [rays, setRays] = useState<RaySettings>({ enabled: true, first: true, second: false, listener: '', band: '1000', surfaces: { floor: true, ceiling: true, front: true, rear: true, left: true, right: true }, maxSecond: 24, quality: 'high' })
+  const [selectedRay, setSelectedRay] = useState<string | null>(null), [measuring, setMeasuring] = useState(false), [anchor, setAnchor] = useState<Anchor | null>(null), [message, setMessage] = useState(''), [help, setHelp] = useState(false)
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => { try { return localStorage.getItem('acoustic-room-theme') === 'light' ? 'light' : 'dark' } catch { return 'dark' } })
+  useEffect(() => { document.documentElement.dataset.theme = theme; try { localStorage.setItem('acoustic-room-theme', theme) } catch { /* Theme works without storage. */ } }, [theme])
+  useEffect(() => { persist() }, [persist])
+  const effectiveRays = { ...rays, listener: resolveListener(d, rays.listener)?.id || '' }
+  const paths = useMemo(() => computePaths(d, rays, display), [d, rays, display])
+  const object = d.objects.find(o => o.id === selected), ray = paths.find(p => p.id === selectedRay)
+  useEffect(() => { if (!message) return; const timer = window.setTimeout(() => setMessage(''), 6000); return () => clearTimeout(timer) }, [message])
+  const toggleDisplay = (key: keyof Display, value: boolean) => setDisplay(v => ({ ...v, [key]: value }))
+  const escape = useCallback(() => { setMeasuring(false); setAnchor(null); setHelp(false) }, [])
+  const point = (a: Anchor) => { if (!anchor) { setAnchor(a); setMessage('First point selected. Click the second point or object.') } else { commit({ ...d, measurements: [...d.measurements, { id: crypto.randomUUID(), a: anchor, b: a }] }); setAnchor(null); setMeasuring(false); setMessage('Measurement added. Object anchors follow their positions.'); setTab('Measure') } }
+  const placeItem = (id: string) => { if (!place(id)) { setMessage('Unable to place this item. The room supports up to 150 objects, including listeners.'); return } setTab('Design'); setMessage('Placed using library defaults. Select it to adjust placement.') }
+  const saveProgress = () => setMessage(saveMilestone() ? 'Milestone saved. Open Saves to jump back to any earlier version.' : 'Storage is full or unavailable. Export workspace history to keep a backup.')
+  return <div className={`studio ${collapsed ? 'is-collapsed' : ''}`}><Keyboard onEscape={escape} />
+    <header className="app-header"><div className="brand"><span className="brand-mark">▥</span><div>Acoustic Room<span>VISUALIZER</span></div></div><div className="project-name"><input aria-label="Design name" maxLength={100} value={d.name} onChange={e => commit({ ...d, name: e.target.value })} /><span className={storageError ? 'save-state error' : 'save-state'}>● {storageError ? 'Autosave unavailable' : 'Working copy autosaved'}</span></div><button className="theme-button" aria-label="Toggle light and dark mode" aria-pressed={theme === 'light'} onClick={() => setTheme(t => t === 'dark' ? 'light' : 'dark')}>{theme === 'dark' ? '☀ Light mode' : '☾ Dark mode'}</button><button title="Open user guide" className="guide-button" onClick={() => setHelp(true)}>Guide</button><button className="primary save-button" onClick={saveProgress}>Save / Update</button></header>
+    <aside className="tool-panel"><div className="panel-top"><span>YOUR ROOM, REFINED.</span><button title="Collapse editing panel" onClick={() => setCollapsed(true)}>‹</button></div><div className="panel-tabs">{['Design', 'Library', 'Rays', 'Measure', 'Saves', 'Files'].map(t => <button key={t} className={tab === t ? 'active' : ''} onClick={() => setTab(t)}>{t}</button>)}</div><div className="panel-scroll">
+      {tab === 'Design' && <><RoomEditor unit={unit} /><Section title="Add to your room"><p className="hint">Choose reusable panels, speakers, stands and sofas. Each sofa includes two seated listeners.</p><button className="wide-button" onClick={() => setTab('Library')}>Open object library →</button></Section>
+      <Section title="Objects & layers" extra={<span className="badge">{d.objects.length}</span>}><div className="layer-toggles"><Toggle label="All absorption panels" checked={display.panel} onChange={v => toggleDisplay('panel', v)} /><Toggle label="All bass traps" checked={display.bass} onChange={v => toggleDisplay('bass', v)} /></div><div className="object-list">{d.objects.length === 0 && <p className="hint">Your room is empty. Open the Library to place your first object.</p>}{d.objects.map(o => <div className={`object-row ${selected === o.id ? 'selected' : ''}`} key={o.id}><button onClick={() => { select(o.id); setSelectedRay(null) }}><span className={`object-symbol ${o.kind}`} style={{ color: o.color }}>{o.kind === 'speaker' ? '◉' : o.kind === 'listener' ? '◎' : o.kind === 'sofa' ? '▰' : '▥'}</span><span>{o.name}<small>{o.kind === 'panel' || o.kind === 'bass' ? o.mount : o.kind}</small></span></button><input type="checkbox" aria-label={`Show ${o.name}`} title={`Show ${o.name}`} checked={o.visible} onChange={e => patch(o.id, { visible: e.target.checked })} /></div>)}</div><details><summary>Room surfaces</summary><div className="surface-buttons">{walls.map(w => <button key={w} className={selected === w ? 'active' : ''} onClick={() => select(w)}>{w}</button>)}</div></details></Section>
+      {object ? <>{!object.parentSofaId && <Section title="Selected object actions"><div className="button-pair"><button onClick={duplicate}>Duplicate</button><button onClick={resetObject}>Reset</button><button className="danger" onClick={remove}>Delete</button></div></Section>}<ObjectEditor key={object.id} o={object} unit={unit} /></> : <Section title={selected ? `${selected[0].toUpperCase() + selected.slice(1)} surface` : 'Properties'}><p className="hint">{selected ? 'Edit room dimensions above to resize this surface. Its reflection toggle is in the Rays tab.' : 'Select an object in the room or the list to edit its dimensions, placement, and acoustic data.'}</p></Section>}
+      <Section title="Direct manipulation"><div className="button-pair"><button className={mode === 'translate' ? 'active' : ''} onClick={() => setMode('translate')}>↔ Move</button><button className={mode === 'rotate' ? 'active' : ''} onClick={() => setMode('rotate')}>↻ Rotate</button></div><Toggle label="Grid & 15° angle snapping" checked={snapEnabled} onChange={setSnapEnabled} /><NumberField label="Grid increment" value={unit === 'ft' ? snap / 0.3048 : snap} suffix={unit} min={0.01} max={5} onChange={v => setSnap(unit === 'ft' ? ft(v) : v)} /><p className="hint">Use mounting controls to snap treatments to walls, floor, ceiling, and corners.</p></Section></>}
+      {tab === 'Library' && <LibraryPanel unit={unit} onPlace={placeItem} onMessage={setMessage} />}
+      {tab === 'Saves' && <HistoryPanel onMessage={setMessage} />}
+      {tab === 'Rays' && <><Section title="Reflection paths" extra={<span className="badge">GEOMETRIC</span>}><p className="ray-status" role="status">{rayStatus(d, effectiveRays, paths.length)}</p><p className="model-notice">Approximate specular geometric visualization. Not an acoustical measurement or prediction.</p><Toggle label="Enable reflections" checked={rays.enabled} onChange={enabled => setRays(r => ({ ...r, enabled }))} /><Toggle label="First order · one reflection" checked={rays.first} onChange={first => setRays(r => ({ ...r, first }))} /><Toggle label="Second order · two reflections" checked={rays.second} onChange={second => setRays(r => ({ ...r, second }))} /><label className="text-field">Destination listener<select aria-label="Destination listener" value={effectiveRays.listener} onChange={e => setRays(r => ({ ...r, listener: e.target.value }))}><option value="">Automatic listener</option>{d.objects.filter(o => o.kind === 'listener').map(o => <option key={o.id} value={o.id}>{o.name}{o.visible ? '' : ' (hidden)'}</option>)}</select></label><label className="text-field">Frequency band<select aria-label="Frequency band" value={rays.band} onChange={e => setRays(r => ({ ...r, band: e.target.value as RaySettings['band'] }))}>{bands.map(b => <option key={b} value={b}>{b} Hz</option>)}</select></label><label className="text-field">Quality<select aria-label="Ray quality" value={rays.quality} onChange={e => setRays(r => ({ ...r, quality: e.target.value as 'low' | 'high' }))}><option value="low">Fast · first 18 surfaces</option><option value="high">Detailed · first 80 surfaces</option></select></label><NumberField label="Second-order cap / speaker" value={rays.maxSecond} min={1} max={150} step={1} onChange={n => setRays(r => ({ ...r, maxSecond: Math.round(n) }))} /><p className="hint">Each contact retains 1 − α of ray energy in the selected band. Two contacts multiply these factors. Surfaces are finite planes; scattering, phase and diffraction are not modeled.</p></Section><Section title="Sources & reflecting surfaces">{d.objects.filter(o => o.kind === 'speaker').map(o => <Toggle key={o.id} label={o.name} checked={o.reflect} onChange={reflect => patch(o.id, { reflect })} />)}<hr />{walls.map(w => <Toggle key={w} label={`${w[0].toUpperCase() + w.slice(1)}${w === 'floor' || w === 'ceiling' ? '' : ' wall'}`} checked={rays.surfaces[w]} onChange={v => setRays(r => ({ ...r, surfaces: { ...r.surfaces, [w]: v } }))} />)}<hr />{d.objects.filter(o => o.kind === 'panel' || o.kind === 'bass').map(o => <Toggle key={o.id} label={o.name} checked={o.reflect} onChange={reflect => patch(o.id, { reflect })} />)}</Section><Section title="Ray inspector" extra={<span className="badge">{paths.length} PATHS</span>}><label className="text-field">Select a path<select aria-label="Select ray" value={ray?.id || ''} onChange={e => setSelectedRay(e.target.value)}><option value="">Select in viewport or choose here</option>{paths.map(p => <option key={p.id} value={p.id}>{p.source} → {p.surfaces.join(' → ')}</option>)}</select></label>{ray ? <div className="ray-inspector"><p><span>Source</span><b>{ray.source}</b></p><p><span>Destination</span><b>{ray.listener}</b></p><p><span>Order</span><b>{ray.order}</b></p><p><span>Surfaces</span><b>{ray.surfaces.join(' → ')}</b></p><p><span>Path length</span><b>{distanceLabel(ray.length, unit)}</b></p><p><span>Energy retained</span><b>{(ray.energy * 100).toFixed(1)}%</b></p><p><span>Visual loss</span><b>{ray.energy > 0 ? (-10 * Math.log10(ray.energy)).toFixed(1) : '∞'} dB</b></p><p className="hint">Coefficient-only energy loss; excludes distance spreading and is not a calibrated sound level.</p></div> : <p className="hint">Click a ray to inspect its surfaces, length and attenuation. No paths? Check sources, destination, and reflection toggles.</p>}</Section></>}
+      {tab === 'Measure' && <><Section title="Measurements"><Toggle label="Show all measurements" checked={display.measurements} onChange={v => toggleDisplay('measurements', v)} /><Toggle label="Room dimensions" checked={display.dimensions} onChange={v => toggleDisplay('dimensions', v)} /><Toggle label="Object-to-wall distances" checked={display.wallMeasures} onChange={v => toggleDisplay('wallMeasures', v)} /><Toggle label="Custom measurements" checked={display.custom} onChange={v => toggleDisplay('custom', v)} /><button className="wide-button" onClick={() => { setMeasuring(!measuring); setAnchor(null); toggleDisplay('measurements', true); toggleDisplay('custom', true) }}>{measuring ? 'Cancel measurement' : '＋ Measure two points'}</button><p className="hint">Click two surface points or objects. Object anchors follow the object origin; surface points remain fixed. Wall distances measure from the selected origin to the specified wall plane.</p>{measuring && <p className="model-notice">{anchor ? 'Click the second point.' : 'Click the first point.'} Press Escape to cancel.</p>}</Section><Section title="Saved measurements">{d.measurements.length === 0 && <p className="hint">No measurements yet. Pick any two points in the viewport.</p>}{d.measurements.map((m, i) => <div key={m.id} className="measurement-row"><span>Measurement {i + 1}</span><button aria-label={`Delete measurement ${i + 1}`} onClick={() => commit({ ...d, measurements: d.measurements.filter(q => q.id !== m.id) })}>×</button></div>)}</Section></>}
+      {tab === 'Files' && <FilesPanel unit={unit} onUnit={setUnit} onMessage={setMessage} onHistory={() => setTab('Saves')} />}
+    </div><div className="panel-footer"><div><button title="Undo (⌘/Ctrl Z)" disabled={!past.length} onClick={undo}>↶ Undo</button><button title="Redo (⌘/Ctrl Shift Z)" disabled={!future.length} onClick={redo}>↷ Redo</button></div><span>LOCAL STUDIO</span></div></aside>
+    <main className="viewport-area"><div className="viewport-toolbar"><div className="camera-tools">{collapsed && <button title="Expand tool panel" onClick={() => setCollapsed(false)}>☰</button>}<span className="toolbar-label">VIEW</span><select aria-label="Camera view" value={view} onChange={e => setView(e.target.value)}>{['Perspective', 'Front', 'Rear', 'Left', 'Right', 'Top', 'Side'].map(v => <option key={v}>{v}</option>)}</select><button title="Reset camera view" onClick={() => { setView('Perspective'); setCameraRevision(n => n + 1) }}>↺</button></div><div className="display-tools">{([['transparent', '◈', 'See-through'], ['grid', '⊞', 'Grid'], ['axes', '⌁', 'Axes'], ['labels', 'Aa', 'Labels'], ['measurements', '↔', 'Dimensions']] as const).map(([key, icon, label]) => <button title={label} aria-label={label} aria-pressed={display[key]} key={key} className={display[key] ? 'active' : ''} onClick={() => { if (key === 'measurements') setDisplay(v => ({ ...v, measurements: !v.measurements, dimensions: !v.measurements })); else toggleDisplay(key, !display[key]) }}>{icon}<span>{label}</span></button>)}</div></div>
+      <div className={`scene-container ${measuring ? 'measuring' : ''}`} onDragOver={e => e.preventDefault()} onDrop={e => { e.preventDefault(); const id = e.dataTransfer.getData('application/acoustic-template'); if (id) placeItem(id) }}><Scene theme={theme} onObjectSelected={() => setTab('Design')} display={display} view={view} cameraRevision={cameraRevision} mode={mode} snap={snapEnabled ? snap : 0} paths={paths} selectedRay={selectedRay} onRay={id => { setSelectedRay(id); setTab('Rays') }} measuring={measuring} onPoint={point} unit={unit} />
+      <div className="scene-heading"><span className="eyebrow">LISTENING SPACE / 01</span><h1>{d.name || 'Untitled design'}</h1><p>{distanceLabel(d.room.width, unit)} × {distanceLabel(d.room.length, unit)} × {distanceLabel(d.room.height, unit)}</p></div>{d.objects.length === 0 && <div className="empty-room"><h2>A blank room. Your next idea.</h2><p>Start with a sofa and speakers from your library.</p><button className="primary" onClick={() => setTab('Library')}>Explore library →</button></div>}<div className="scene-status"><span className="live-dot" />{measuring ? anchor ? 'Choose second point' : 'Choose first point' : 'LIVE 3D'}</div>
+      <div className="viewport-legend"><span><i className="left-ray" />Left / odd speaker</span><span><i className="right-ray" />Right / even speaker</span><small data-testid="ray-count">{paths.length} valid paths · {rays.band} Hz</small></div><div className="orbit-hint">Drag to orbit <b>·</b> Right-drag to pan <b>·</b> Scroll to zoom</div></div>
+      <div className="bottom-info"><span className="info-icon">ⓘ</span><div><strong>See the geometry. Understand the possibilities.</strong><p>Approximate specular reflections only — not an acoustical measurement or prediction.</p></div><span className="object-count">{d.objects.length} objects <i /> {paths.length} paths</span></div>
+    </main>{message && <div className="notification" role="status"><span>{message}</span><button aria-label="Dismiss notification" onClick={() => setMessage('')}>×</button></div>}{help && <div className="modal-backdrop" onClick={() => setHelp(false)}><div className="guide-modal" role="dialog" aria-modal="true" aria-label="User guide" onClick={e => e.stopPropagation()}><span className="eyebrow">A SPACE FOR BETTER LISTENING</span><h2>Your studio, from every angle.</h2><p>Start with a blank room and choose reusable objects in Library. Set each type’s dimensions once; absorption starts at NRC 1.00. A sofa includes two fixed listeners that follow it. Select an object in the viewport or list to edit it. Move and rotate using the colored gizmo; mounting controls snap panels to surfaces and corners.</p><p>In Rays, choose a listener and frequency, enable first or second order, then click a ray to inspect its geometry. Hidden listeners and speakers may still participate in paths; their visibility and reflection switches are independent.</p><p>Measure two points from the Measure tab. Object anchors update when objects move. Standard views and see-through mode help inspect placement.</p><p><b>Shortcuts:</b> Delete to remove · ⌘/Ctrl D to duplicate · ⌘/Ctrl Z to undo · ⌘/Ctrl Shift Z to redo · Escape to cancel.</p><p>Everything stays in your browser. Save / Update creates a permanent milestone. Open Saves to jump back in time. Files exports the full history or imports a design. This tool models finite specular planes, not wave acoustics.</p><button autoFocus className="export-button" onClick={() => setHelp(false)}>Start designing →</button></div></div>}
+  </div>
 }
-
 export default App
