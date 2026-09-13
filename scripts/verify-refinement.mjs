@@ -15,7 +15,7 @@ await page.getByRole('button',{name:'Custom',exact:true}).click();
 if(await page.getByLabel('Custom thickness',{exact:true}).inputValue()!=='4')throw Error('Custom not initialized to 4');
 await page.getByRole('button',{name:'Rays',exact:true}).click();
 await page.getByRole('button',{name:'Reset ray controls',exact:true}).click();
-await page.waitForFunction(()=>document.querySelector('[data-testid="ray-count"]')?.textContent.startsWith('0'));
+await page.waitForFunction(()=>JSON.parse(localStorage.getItem('acoustic-room-workspace-v2')).design.objects.every(o=>!o.reflect));
 await page.evaluate(()=>{localStorage.clear();sessionStorage.clear()});
 await page.reload();
 await page.getByRole('button',{name:'Create a new room',exact:true}).click();

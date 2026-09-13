@@ -1,3 +1,4 @@
+import Icon from './components/Icon';
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CSSProperties } from "react";
 import Scene from "./components/Scene";
@@ -10,7 +11,7 @@ import {
   Toggle,
 } from "./components/Controls";
 import { useStudio } from "./domain/store";
-import { blankDesign, distanceLabel, walls } from "./domain/model";
+import { blankDesign, distanceLabel, makeObject, mountTreatmentAtPoint, walls } from "./domain/model";
 import type { Anchor, Room, RoomObject, Wall } from "./domain/model";
 import { computePaths, resolveListener, speakerRayColor } from "./domain/acoustics";
 import type { RaySettings } from "./domain/acoustics";
@@ -18,6 +19,7 @@ import LibraryPanel from "./components/LibraryPanel";
 import HistoryPanel from "./components/HistoryPanel";
 import FilesPanel from "./components/FilesPanel";
 import "./App.css";
+import "./studio-v12.css";
 const defaultDisplay: Display = {
   transparent: true,
   grid: true,
@@ -98,15 +100,8 @@ function SurfaceToggleGrid({
     </div>
   );
 }
-function HistoryIcon({ redo = false }: { redo?: boolean }) {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d={redo ? "M15 6h5V1" : "M9 6H4V1"} />
-      <path d={redo ? "M20 6a8 8 0 1 0 0 10" : "M4 6a8 8 0 1 1 0 10"} />
-    </svg>
-  );
-}
 function App() {
+  const [objectQuery, setObjectQuery] = useState("");
   const {
     design: d,
     selected,
@@ -255,6 +250,27 @@ function App() {
     commit({...d,objects:d.objects.map(o=>({...o,reflect:false}))});
     setSelectedRay(null);
   };
+  const placeReflectionAbsorbers = () => {
+    const wallNames = new Set(["Front wall", "Rear wall", "Left wall", "Right wall", "Floor", "Ceiling"]);
+    const seen = new Set<string>();
+    const additions: RoomObject[] = [];
+    for (const path of reflectedPaths) {
+      path.points.slice(1, -1).forEach((point, index) => {
+        const surface = path.surfaces[index];
+        if (!wallNames.has(surface)) return;
+        const key = `${surface}:${point.map(n => n.toFixed(3)).join(",")}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        const panel = makeObject("panel");
+        const mount = ({"Front wall":"front","Rear wall":"rear","Left wall":"left","Right wall":"right","Floor":"floor","Ceiling":"ceiling"} as Record<string, Wall>)[surface];
+        const positioned = mountTreatmentAtPoint({ ...panel, name: `Reflection absorber ${additions.length + 1}`, reflect: true }, mount, point, d.room);
+        additions.push(positioned);
+      });
+    }
+    if (!additions.length) { setMessage("No valid wall reflection points are available with the current ray settings."); return; }
+    commit({ ...d, objects: [...d.objects, ...additions] });
+    setMessage(`Placed ${additions.length} absorbers at first- and second-order reflection points for the active speakers.`);
+  };
   const toggleFullscreen = async () => {
     if (fullScreen || document.fullscreenElement) {
       if (document.fullscreenElement) await document.exitFullscreen().catch(() => undefined);
@@ -358,9 +374,10 @@ function App() {
     return (
       <div className="hero-screen">
         <div className="hero-card">
-          <span className="brand-mark">▥</span>
+          <span className="brand-mark"><Icon name="Rays" /></span>
           <p className="eyebrow">ACOUSTIC ROOM VISUALIZER</p>
-          <h1>Build a perfect sounding room.</h1>
+          <h1>A better space.
+            A clearer sound.</h1>
           <p>
             Plan speaker placement, treatment surfaces and geometric reflections
             in a calm, visual workspace.
@@ -382,27 +399,27 @@ function App() {
       <Keyboard onEscape={escape} />
       <header className="app-header">
         <div className="brand">
-          <span className="brand-mark">▥</span>
+          <span className="brand-mark"><Icon name="Rays" /></span>
           <div>
             Acoustic Room<span>VISUALIZER</span>
           </div>
         </div>
         <div className="header-actions" role="toolbar" aria-label="Project actions">
           <button className="primary save-button" title="Save a new milestone" onClick={saveProgress}>
-            <span aria-hidden="true">▣</span> Save / Update
+            <Icon name="save" /> Save / Update
           </button>
           <button
             className="danger reset-button"
             onClick={() => setResetConfirm("open")}
           >
-            <span aria-hidden="true">↺</span> Reset project
+            <Icon name="reset" /> Reset project
           </button>
           <button
             className="close-button"
             title="Close project and return to home"
             onClick={() => setCloseConfirm("open")}
           >
-            <span aria-hidden="true">×</span> Close project
+            <Icon name="close" /> Close project
           </button>
           <button
             className="theme-button"
@@ -413,7 +430,7 @@ function App() {
             }
             onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
           >
-            <span aria-hidden="true">{theme === "dark" ? "☀" : "☾"}</span>
+            <Icon name={theme === "dark" ? "sun" : "moon"} />
             <span className="theme-label">
               {theme === "dark" ? "Light" : "Dark"}
             </span>
@@ -424,19 +441,19 @@ function App() {
             className="guide-button"
             onClick={() => setHelp(true)}
           >
-            ?
+            <Icon name="help" />
           </button>
         </div>
       </header>
       <aside className="tool-panel">
         <div className="panel-top">
-          <span>YOUR ROOM, REFINED.</span>
+          <div className="panel-identity"><span>WORKSPACE</span><strong>{tab === "Saves" ? "History" : tab}</strong></div>
           <button
             aria-label="Collapse editing panel"
             title="Collapse editing panel"
             onClick={() => setCollapsed(true)}
           >
-            ‹
+            <Icon name="collapse" />
           </button>
         </div>
         <div className="panel-tabs">
@@ -444,17 +461,20 @@ function App() {
             <button
               key={item.id}
               aria-label={item.label}
+              aria-pressed={tab === item.id}
+              title={{Design:"Room geometry and object placement",Library:"Reusable objects and acoustic treatments",Rays:"Sources, reflection paths and frequency",Measure:"Distances and dimensions",Saves:"Saved milestones and restore",Files:"Import, export and demo room"}[item.id]}
               className={tab === item.id ? "active" : ""}
               onClick={() => setTab(item.id)}
             >
               <span className="tab-icon" aria-hidden="true">
-                {item.icon}
+                <Icon name={item.id} />
               </span>
               <span className="tab-label">{item.label}</span>
             </button>
           ))}
         </div>
-        <div className="panel-scroll">
+        <div className="panel-scroll" key={tab}>
+          <div className="panel-introduction"><p>{{Design:"Shape your room. Position every detail.",Library:"Reusable objects, tuned to your space.",Rays:"Explore the path from source to listener.",Measure:"Precision for every placement.",Saves:"Every milestone. Always within reach.",Files:"Your work, ready to travel."}[tab]}</p>{tab === "Design" && <button className="quick-add" onClick={()=>setTab("Library")}><Icon name="Library" /> Add objects</button>}</div>
           {tab === "Design" && (
             <>
               <RoomEditor unit={unit} />
@@ -474,19 +494,23 @@ function App() {
                     onChange={(v) => toggleDisplay("bass", v)}
                   />
                 </div>
-                <div className="object-list">
+                <input className="object-search" aria-label="Find placed objects" placeholder="Find an object…" value={objectQuery} onChange={e=>setObjectQuery(e.target.value)} />
+                <div className="object-list object-grid">
                   {d.objects.length === 0 && (
                     <p className="hint">
                       Your room is empty. Open the Library to place your first
                       object.
                     </p>
                   )}
-                  {d.objects.map((o) => (
+                  {d.objects.filter(o => o.name.toLowerCase().includes(objectQuery.toLowerCase())).map((o) => (
                     <div
                       className={`object-row ${selected === o.id ? "selected" : ""}`}
                       key={o.id}
                     >
                       <button
+                        aria-label={`Select ${o.name}`}
+                        aria-pressed={selected === o.id}
+                        title={`Edit ${o.name}`}
                         onClick={() => {
                           select(o.id);
                           setSelectedRay(null);
@@ -496,15 +520,7 @@ function App() {
                           className={`object-symbol ${o.kind}`}
                           style={{ color: o.color }}
                         >
-                          {o.kind === "speaker"
-                            ? "◉"
-                            : o.kind === "listener"
-                              ? "◎"
-                              : o.kind === "sofa"
-                                ? "▰"
-                                : o.kind === "bass"
-                                  ? "◒"
-                                  : "▥"}
+                          <Icon name={o.kind} />
                         </span>
                         <span>
                           {o.name}
@@ -515,17 +531,10 @@ function App() {
                           </small>
                         </span>
                       </button>
-                      <input
-                        type="checkbox"
-                        aria-label={`Show ${o.name}`}
-                        title={`Show ${o.name}`}
-                        checked={o.visible}
-                        onChange={(e) =>
-                          patch(o.id, { visible: e.target.checked })
-                        }
-                      />
+                      <button className="object-visibility" aria-label={`Show ${o.name}`} title={o.visible ? `Hide ${o.name}` : `Show ${o.name}`} aria-pressed={o.visible} onClick={()=>patch(o.id,{visible:!o.visible})}><span aria-hidden="true">{o.visible ? "✓" : "−"}</span><span>{o.visible ? "Visible" : "Hidden"}</span></button>
                     </div>
                   ))}
+                  {d.objects.length > 0 && !d.objects.some(o=>o.name.toLowerCase().includes(objectQuery.toLowerCase())) && <p className="hint">No matching objects.</p>}
                 </div>
               </Section>
               {object && (
@@ -583,6 +592,7 @@ function App() {
                   <button aria-pressed={rays.second} onClick={()=>setRays(r=>({...r,second:!r.second}))}>Second order <span>┄</span></button>
                   <button aria-label="Explain second order reflections" title="How second order works" onClick={()=>setRayHelp(true)}>ⓘ</button>
                 </div>
+                <h3 className="ray-subheading">Destination listeners</h3>
                 <div className="segmented listener-buttons" role="group" aria-label="Listeners">
                 <button aria-pressed={rays.listeners?.a ?? true} onClick={()=>setRays(r=>({...r,listeners:{a:!r.listeners?.a,b:r.listeners?.b??true}}))}><span className="listener-avatar">A</span>Listener A</button>
                 <button aria-pressed={rays.listeners?.b ?? true} onClick={()=>setRays(r=>({...r,listeners:{a:r.listeners?.a??true,b:!r.listeners?.b}}))}><span className="listener-avatar listener-avatar-b">B</span>Listener B</button>
@@ -610,7 +620,7 @@ function App() {
                   />
                 </label>
               </Section>
-              <Section title="Sources & reflecting surfaces">
+              <Section title="Sources & room boundaries">
                 <h3 className="ray-subheading">Speakers</h3>
                 <div className="ray-source-grid">
                   {d.objects
@@ -641,23 +651,23 @@ function App() {
                     }))
                   }
                 />
-                {d.objects.some(
-                  (o) => o.kind === "panel" || o.kind === "bass",
-                ) && (
-                  <>
-                    <h3 className="ray-subheading">Treatment surfaces</h3>
-                    {d.objects
-                      .filter((o) => o.kind === "panel" || o.kind === "bass")
-                      .map((o) => (
-                        <Toggle
-                          key={o.id}
-                          label={`Reflect from ${o.name}`}
-                          checked={o.reflect}
-                          onChange={(reflect) => patch(o.id, { reflect })}
-                        />
-                      ))}
-                  </>
-                )}
+              </Section>
+              <Section title="Treatment surfaces" extra={<span className="badge">{d.objects.filter(o => (o.kind === "panel" || o.kind === "bass") && o.reflect).length} enabled</span>}>
+                <button className="wide-button" onClick={placeReflectionAbsorbers}>＋ Place absorbers at all reflection points</button>
+                <button className="wide-button" onClick={() => { commit({...d, objects:d.objects.filter(o => o.kind !== "panel" && o.kind !== "bass")}); setMessage("Removed all absorbers."); }}>－ Remove all absorbers</button>
+                <div className="treatment-bulk-actions" role="group" aria-label="Treatment reflection selection">
+                  <span>Include in reflections</span>
+                  <button onClick={()=>commit({...d,objects:d.objects.map(o=>o.kind === "panel" || o.kind === "bass" ? {...o,reflect:true} : o)})}>All on</button>
+                  <button onClick={()=>commit({...d,objects:d.objects.map(o=>o.kind === "panel" || o.kind === "bass" ? {...o,reflect:false} : o)})}>All off</button>
+                </div>
+                <div className="treatment-ray-grid">
+                  {d.objects.filter(o=>o.kind === "panel" || o.kind === "bass").map(o=><button key={o.id} className="treatment-ray-card" aria-label={`Reflect from ${o.name}`} aria-pressed={o.reflect} title={`${o.name}: reflections ${o.reflect ? "on" : "off"}`} onClick={()=>patch(o.id,{reflect:!o.reflect})}>
+                    <span className="treatment-ray-icon"><Icon name={o.kind}/></span>
+                    <span className="treatment-ray-copy"><strong>{o.name}</strong><small>{o.mount === "free" ? "Free-standing" : o.mount === "floor" || o.mount === "ceiling" ? o.mount : `${o.mount} wall`}</small></span>
+                    <span className="treatment-ray-state">{o.reflect ? "On" : "Off"}</span>
+                  </button>)}
+                </div>
+                {!d.objects.some(o=>o.kind === "panel" || o.kind === "bass") && <p className="hint">Add absorption panels or bass traps from Library to select treatment reflections.</p>}
               </Section>
               <button className="wide-button" onClick={resetRayControls}>
                 Reset ray controls
@@ -717,8 +727,8 @@ function App() {
                       </b>
                     </p>
                     <p className="hint">
-                      Coefficient-only energy loss; excludes distance spreading
-                      and is not a calibrated sound level.
+                      Energy loss uses the selected absorption curve and
+                      incident/reflected angle; distance spreading is excluded.
                     </p>
                   </div>
                 ) : (
@@ -806,8 +816,6 @@ function App() {
           )}
           {tab === "Files" && (
             <FilesPanel
-              unit={unit}
-              onUnit={setUnit}
               onMessage={setMessage}
               onHistory={() => setTab("Saves")}
             />
@@ -844,7 +852,7 @@ function App() {
                 title="Expand editing panel"
                 onClick={() => setCollapsed(false)}
               >
-                ☰
+                <Icon name="expand" />
               </button>
             )}
             <select
@@ -871,7 +879,7 @@ function App() {
               disabled={!past.length}
               onClick={undo}
             >
-              <HistoryIcon />
+              <Icon name="undo" />
             </button>
             <button
               className="history-button"
@@ -880,10 +888,10 @@ function App() {
               disabled={!future.length}
               onClick={redo}
             >
-              <HistoryIcon redo />
+              <Icon name="redo" />
             </button>
             <button title="Toggle fullscreen" aria-label="Toggle fullscreen" aria-pressed={fullScreen} onClick={toggleFullscreen}>
-              ⛶
+              <Icon name={fullScreen ? "minimize" : "fullscreen"} />
             </button>
             <button
               title="Reset camera view"
@@ -893,15 +901,15 @@ function App() {
                 setCameraRevision((n) => n + 1);
               }}
             >
-              ↺
+              <Icon name="reset" />
             </button>
           </div>
-          <div className="display-tools">
+          <div className="display-tools"><div className="unit-switch" role="group" aria-label="Display units">{(["ft","cm"] as const).map(u=><button key={u} aria-pressed={unit===u} onClick={()=>setUnit(u)}>{u}</button>)}</div>
             {(
               [
-                ["axes", "⌁", "Axes"],
-                ["labels", "Aa", "Labels"],
-                ["measurements", "↔", "Dimensions"],
+                ["axes", "axes", "Axes"],
+                ["labels", "labels", "Labels"],
+                ["measurements", "Measure", "Dimensions"],
               ] as const
             ).map(([key, icon, label]) => (
               <button
@@ -920,7 +928,7 @@ function App() {
                   else toggleDisplay(key, !display[key]);
                 }}
               >
-                {icon}
+                <Icon name={icon} />
                 <span>{label}</span>
               </button>
             ))}
@@ -977,23 +985,7 @@ function App() {
               </button>
             </div>
           )}
-          <div className="viewport-guidance"><div className="viewport-legend">
-            <span>
-              <i className="left-ray" />
-              Left speaker
-            </span>
-            <span>
-              <i className="right-ray" />
-              Right speaker
-            </span>
-            <span>━ First · ┄ Second</span><small data-testid="ray-count">
-              {paths.length} valid paths · {Math.round(rays.frequency || 1000)}{" "}
-              Hz
-            </small>
-          </div>
-          <div className="orbit-hint">
-            Drag to orbit <b>·</b> Right-drag to pan <b>·</b> Scroll to zoom
-          </div></div>
+
         </div>
       </main>
       {closeConfirm && (
@@ -1024,7 +1016,7 @@ function App() {
                 setCloseConfirm("");
               }}
             >
-              <span aria-hidden="true">×</span> Close project
+              <Icon name="close" /> Close project
             </button>
             <button onClick={() => setCloseConfirm("")}>Cancel</button>
           </div>

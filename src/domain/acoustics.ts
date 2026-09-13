@@ -114,7 +114,10 @@ export function treatmentSurface(o: RoomObject): Surface {
     id: o.id,
     objectId: o.id,
     name: o.name,
-    center: add(o.position, scale(normal, o.size[2] / 2)),
+    // Object positions are the center of the rendered box.  Do not move the
+    // acoustic plane by half its thickness; doing so makes mounted treatments
+    // disagree with their visible geometry and drops otherwise valid paths.
+    center: o.position,
     normal,
     u: rotate([1, 0, 0]),
     v: rotate([0, 1, 0]),
@@ -224,7 +227,11 @@ export function computePaths(
     (o) =>
       (o.kind === "panel" || o.kind === "bass") && o.visible && layers[o.kind],
   );
-  const blockers = treatments.map(treatmentSurface);
+  // A treatment that is switched off in Rays is not part of the acoustic
+  // scene at all: it must neither reflect nor occlude a wall path.
+  const blockers = treatments
+    .filter((o) => o.reflect)
+    .map(treatmentSurface);
   const surfaces = [
     ...roomSurfaces(d.room).filter((s) => settings.surfaces[s.id as Wall]),
     ...treatments.filter((o) => o.reflect).map(treatmentSurface),
@@ -278,7 +285,16 @@ export function computePaths(
           for (const blocker of blockers) {
             if (intersect(points[i], points[i + 1], blocker)) return;
           }
-        const energy = seq.reduce((e, s) => e * (1 - retained(s)), 1);
+        const segmentEnergies = [1];
+        for (let i = 0; i < seq.length; i++) {
+          const incoming = sub(points[i + 1], points[i]);
+          const outgoing = sub(points[i + 2], points[i + 1]);
+          const incidence = reflectionCosine(incoming, outgoing, seq[i].normal);
+          // Grazing incidence presents less absorbing area to the wave.
+          const reflected = Math.max(0, 1 - retained(seq[i]) * incidence);
+          segmentEnergies.push(segmentEnergies[i] * reflected);
+        }
+        const energy = segmentEnergies.at(-1)!;
         output.push({
         id: `${speaker.id}:${listener.id}:${seq.map((s) => s.id).join(":")}`,
           source: speaker.name,
@@ -290,6 +306,7 @@ export function computePaths(
             .slice(1)
             .reduce((n, p, i) => n + distance(p, points[i]), 0),
           energy,
+          segmentEnergies,
           color: speakerRayColor(speaker, d.room),
         });
         if (seq.length === 2) secondCount++;
@@ -308,6 +325,14 @@ export function computePaths(
       }
     }
   return output;
+}
+
+function reflectionCosine(incoming: Vec3, outgoing: Vec3, normal: Vec3) {
+  const incomingLength = distance([0, 0, 0], incoming) || 1;
+  const outgoingLength = distance([0, 0, 0], outgoing) || 1;
+  // For a specular reflection these are equal; averaging both ray directions
+  // also keeps the attenuation tied to the actual incident/reflected geometry.
+  return Math.min(1, (Math.abs(dot(incoming, normal)) / incomingLength + Math.abs(dot(outgoing, normal)) / outgoingLength) / 2);
 }
 
 // A destination from another project/import must never silently suppress rays.

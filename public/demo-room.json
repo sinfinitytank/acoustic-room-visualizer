@@ -258,9 +258,9 @@
       "kind": "listener",
       "name": "Listener A",
       "position": [
-        2.0384,
-        1.12,
-        4
+        1.9984000000000002,
+        1.0764,
+        4.082000000000001
       ],
       "rotation": [
         0,
@@ -333,16 +333,18 @@
           "coefficient": 1
         }
       ],
-      "placed": false
+      "placed": false,
+      "parentSofaId": "sofa",
+      "seat": 0
     },
     {
       "id": "listener-b",
       "kind": "listener",
       "name": "Listener B",
       "position": [
-        2.8384,
-        1.12,
-        4
+        2.8784,
+        1.0764,
+        4.082000000000001
       ],
       "rotation": [
         0,
@@ -415,20 +417,22 @@
           "coefficient": 1
         }
       ],
-      "placed": false
+      "placed": false,
+      "parentSofaId": "sofa",
+      "seat": 1
     },
     {
       "id": "panel-0",
       "kind": "panel",
       "name": "Absorber 1",
       "position": [
-        1.005,
-        1.4100000000000001,
-        0.0334
+        0.0334,
+        0.9948747740769429,
+        2.228333075135554
       ],
       "rotation": [
         0,
-        0,
+        1.5707963267948966,
         0
       ],
       "size": [
@@ -446,11 +450,11 @@
         "postWidth": 0.065
       },
       "tweeter": 0.3,
-      "mount": "front",
+      "mount": "left",
       "corner": "front-left",
-      "offset": 0.7,
-      "bottom": 0.8,
-      "ceilingOffset": 2.2,
+      "offset": 1.923333075135554,
+      "bottom": 0.3848747740769429,
+      "ceilingOffset": 1.618333075135554,
       "absorption": {
         "125": 0.18,
         "250": 0.44,
@@ -505,13 +509,13 @@
       "kind": "panel",
       "name": "Absorber 2",
       "position": [
-        3.605,
-        1.4100000000000001,
-        0.0588
+        4.8180000000000005,
+        1.021731506190648,
+        2.8389837720879916
       ],
       "rotation": [
         0,
-        0,
+        -1.5707963267948966,
         0
       ],
       "size": [
@@ -529,11 +533,11 @@
         "postWidth": 0.065
       },
       "tweeter": 0.3,
-      "mount": "front",
+      "mount": "right",
       "corner": "front-left",
-      "offset": 3.3,
-      "bottom": 0.8,
-      "ceilingOffset": 2.2,
+      "offset": 2.5339837720879914,
+      "bottom": 0.411731506190648,
+      "ceilingOffset": 2.2289837720879917,
       "absorption": {
         "125": 0.52,
         "250": 0.76,
@@ -588,13 +592,13 @@
       "kind": "panel",
       "name": "Absorber 3",
       "position": [
-        0.0842,
-        1.4100000000000001,
-        2.205
+        1.305154480151229,
+        0.9788641209829867,
+        0.0842
       ],
       "rotation": [
         0,
-        1.5707963267948966,
+        0,
         0
       ],
       "size": [
@@ -612,11 +616,11 @@
         "postWidth": 0.065
       },
       "tweeter": 0.3,
-      "mount": "left",
+      "mount": "front",
       "corner": "front-left",
-      "offset": 1.9,
-      "bottom": 0.8,
-      "ceilingOffset": 2.2,
+      "offset": 1.000154480151229,
+      "bottom": 0.3688641209829867,
+      "ceilingOffset": 0,
       "absorption": {
         "125": 0.77,
         "250": 0.85,
@@ -671,13 +675,13 @@
       "kind": "panel",
       "name": "Absorber 4",
       "position": [
-        4.8434,
-        1.4100000000000001,
-        2.205
+        1.7362473485946106,
+        1.0395165459287163,
+        6.0626
       ],
       "rotation": [
         0,
-        -1.5707963267948966,
+        3.141592653589793,
         0
       ],
       "size": [
@@ -695,11 +699,11 @@
         "postWidth": 0.065
       },
       "tweeter": 0.3,
-      "mount": "right",
+      "mount": "rear",
       "corner": "front-left",
-      "offset": 1.9,
-      "bottom": 0.8,
-      "ceilingOffset": 2.2,
+      "offset": 1.4312473485946107,
+      "bottom": 0.42951654592871635,
+      "ceilingOffset": 5.486,
       "absorption": {
         "125": 0.18,
         "250": 0.44,
@@ -754,9 +758,9 @@
       "kind": "panel",
       "name": "Absorber 5",
       "position": [
-        1.7049999999999998,
+        1.5656100809248557,
         2.6844,
-        2.81
+        2.697496184971099
       ],
       "rotation": [
         1.5707963267948966,
@@ -780,9 +784,9 @@
       "tweeter": 0.3,
       "mount": "ceiling",
       "corner": "front-left",
-      "offset": 1.4,
-      "bottom": 0,
-      "ceilingOffset": 2.2,
+      "offset": 1.2606100809248557,
+      "bottom": 2.1332000000000004,
+      "ceilingOffset": 2.087496184971099,
       "absorption": {
         "125": 0.52,
         "250": 0.76,
@@ -837,13 +841,13 @@
       "kind": "bass",
       "name": "Bass trap 1",
       "position": [
-        0.37672038200428265,
-        0.9500000000000001,
-        0.37672038200428265
+        1.2164699720970167,
+        0.9663866924232668,
+        0.0842
       ],
       "rotation": [
         0,
-        0.7853981633974483,
+        0,
         0
       ],
       "size": [
@@ -861,11 +865,11 @@
         "postWidth": 0.065
       },
       "tweeter": 0.3,
-      "mount": "front",
+      "mount": "free",
       "corner": "front-left",
-      "offset": 1,
-      "bottom": 0.05,
-      "ceilingOffset": 1,
+      "offset": 0.7914699720970166,
+      "bottom": 0.06638669242326678,
+      "ceilingOffset": 0,
       "absorption": {
         "125": 0.77,
         "250": 0.85,
@@ -920,13 +924,13 @@
       "kind": "bass",
       "name": "Bass trap 2",
       "position": [
-        4.550879617995718,
-        0.9500000000000001,
-        0.32592038200428264
+        1.8042191028117625,
+        1.0490798025327324,
+        6.0626
       ],
       "rotation": [
         0,
-        -0.7853981633974483,
+        3.141592653589793,
         0
       ],
       "size": [
@@ -944,11 +948,11 @@
         "postWidth": 0.065
       },
       "tweeter": 0.3,
-      "mount": "front",
+      "mount": "free",
       "corner": "front-right",
-      "offset": 1,
-      "bottom": 0.05,
-      "ceilingOffset": 1,
+      "offset": 1.3792191028117624,
+      "bottom": 0.14907980253273234,
+      "ceilingOffset": 5.196,
       "absorption": {
         "125": 0.18,
         "250": 0.44,

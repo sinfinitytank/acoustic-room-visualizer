@@ -1,9 +1,10 @@
+import RayMotion from './RayMotion'
 import { Component, Suspense, useEffect, useRef } from 'react'
 import type { ReactNode } from 'react'
 import { Canvas } from '@react-three/fiber'
 import type { ThreeEvent } from '@react-three/fiber'
 import { Billboard, Edges, Grid, Html, Line, OrbitControls, TransformControls } from '@react-three/drei'
-import { DoubleSide, Group } from 'three'
+import { Color, DoubleSide, Group } from 'three'
 import type { OrbitControls as OrbitType } from 'three-stdlib'
 import { useStudio } from '../domain/store'
 import { distanceLabel } from '../domain/model'
@@ -23,6 +24,11 @@ function ObjectModel({ o, selected }: { o: RoomObject; selected: boolean }) {
 }
 function Label({ p, children }: { p: Vec3; children: ReactNode }) { return <Billboard position={p}><Html center style={{ pointerEvents: 'none' }}><span className="scene-label">{children}</span></Html></Billboard> }
 function Measure({ a, b, unit, color = '#bccfbc' }: { a: Vec3; b: Vec3; unit: 'ft' | 'cm'; color?: string }) { return <><Line points={[a, b]} color={color} lineWidth={1} dashed dashSize={0.08} gapSize={0.045} /><Label p={[(a[0] + b[0]) / 2, (a[1] + b[1]) / 2 + 0.06, (a[2] + b[2]) / 2]}>{distanceLabel(distance(a, b), unit)}</Label></> }
+function rayOpacity(path: ReflectionPath, segment: number) { return path.surfaces[0] === 'Direct / incident' ? 1 : Math.max(0.04, Math.min(1, path.segmentEnergies?.[segment] ?? path.energy)) }
+function rayColor(path: ReflectionPath, segment: number, theme: 'dark' | 'light') {
+  const base = theme === 'light' ? path.color === '#69d4bf' ? '#087d69' : '#7646b6' : path.color
+  return new Color(base).multiplyScalar(rayOpacity(path, segment))
+}
 function EditableObject({ o, props }: { o: RoomObject; props: SceneProps }) {
   const selected = useStudio(s => s.selected === o.id), select = useStudio(s => s.select), beginDrag = useStudio(s => s.beginDrag), previewMove = useStudio(s => s.previewMove), endDrag = useStudio(s => s.endDrag)
   const ref = useRef<Group>(null!)
@@ -45,8 +51,8 @@ function World(props: SceneProps) {
     {props.display.grid && <Grid position={[r.width / 2, -0.008, r.length / 2]} args={[r.width + 4, r.length + 4]} cellSize={0.3048} cellThickness={0.45} cellColor="#39484a" sectionSize={1.524} sectionThickness={0.7} sectionColor="#506463" fadeDistance={30} />}
     {props.display.axes && <group position={[-0.4, 0.02, -0.4]}><axesHelper args={[0.8]} /><Label p={[0.9, 0, 0]}>X</Label><Label p={[0, 0.9, 0]}>Y</Label><Label p={[0, 0, 0.9]}>Z</Label></group>}
     {d.objects.filter(o => o.visible && (!(o.kind === 'panel' || o.kind === 'bass') || props.display[o.kind])).map(o => <EditableObject key={o.id} o={o} props={props} />)}
-    <group key={`ray-layer-${props.paths.map(path => path.id).join('|')}`}>
-    {props.paths.map(path => <Line key={path.id} userData={{ isRay: true }} dashed={path.order === 2} dashSize={0.12} gapSize={0.08} points={path.points} color={props.theme === 'light' ? path.color === '#69d4bf' ? '#087d69' : '#7646b6' : path.color} transparent depthTest={!props.display.transparent} renderOrder={10} opacity={props.selectedRay === path.id ? 1 : path.surfaces[0] === 'Direct / incident' ? 1 : Math.max(0.12, Math.min(1, path.energy))} lineWidth={props.selectedRay === path.id ? 4 : path.surfaces[0] === 'Direct / incident' ? 2.8 : path.order === 1 ? 2.2 : 1.3} onClick={e => { if (!props.measuring) { e.stopPropagation(); props.onRay(path.id) } }} />)}
+    <RayMotion paths={props.paths}/><group key={`ray-layer-${props.paths.map(path => path.id).join('|')}`}>
+    {props.paths.flatMap(path => path.points.slice(0, -1).map((point, i) => <Line key={`${path.id}:${i}`} userData={{ isRay: true }} dashed={path.order === 2} dashSize={0.12} gapSize={0.08} points={[point, path.points[i + 1]]} color={rayColor(path, i, props.theme)} transparent depthTest={!props.display.transparent} renderOrder={10} opacity={rayOpacity(path, i)} lineWidth={props.selectedRay === path.id ? 4 : path.surfaces[0] === 'Direct / incident' ? 2.8 : path.order === 1 ? 2.2 : 1.3} onClick={e => { if (!props.measuring) { e.stopPropagation(); props.onRay(path.id) } }} />))}
     </group>
     {props.display.measurements && <>{props.display.dimensions && <><Measure a={[0, 0.03, r.length + 0.4]} b={[r.width, 0.03, r.length + 0.4]} unit={props.unit} /><Measure a={[r.width + 0.4, 0.03, 0]} b={[r.width + 0.4, 0.03, r.length]} unit={props.unit} /><Measure a={[-0.3, 0, 0]} b={[-0.3, r.height, 0]} unit={props.unit} /></>}{props.display.wallMeasures && d.objects.filter(o => o.kind === 'speaker' || o.id === selected).map(o => <group key={o.id}><Measure a={o.position} b={[o.id === 'speaker-right' ? r.width : 0, o.position[1], o.position[2]]} unit={props.unit} /><Measure a={o.position} b={[o.position[0], o.position[1], 0]} unit={props.unit} /><Measure a={o.position} b={[o.position[0], 0, o.position[2]]} unit={props.unit} /></group>)}{props.display.custom && d.measurements.map(m => <Measure key={m.id} a={resolve(m.a)} b={resolve(m.b)} unit={props.unit} color="#e3bd7b" />)}</>}
   </>

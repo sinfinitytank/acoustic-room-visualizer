@@ -1,3 +1,4 @@
+import Icon from './Icon';
 import { useRef } from "react";
 import type { ChangeEvent } from "react";
 import { blankDesign, validateDesign } from "../domain/model";
@@ -52,13 +53,9 @@ function importData(data: unknown, label: string) {
 }
 
 export default function FilesPanel({
-  unit,
-  onUnit,
   onMessage,
   onHistory,
 }: {
-  unit: "ft" | "cm";
-  onUnit: (u: "ft" | "cm") => void;
   onMessage: (m: string) => void;
   onHistory: () => void;
 }) {
@@ -67,7 +64,10 @@ export default function FilesPanel({
     try {
       const response = await fetch("/demo-room.json");
       if (!response.ok) throw new Error("Demo room file is unavailable.");
-      importData(await response.json(), "demo load");
+      const imported = await response.json();
+      // Keep the downloadable legacy demo usable while ensuring a fresh demo
+      // opens as an untreated room; treatments are now placed from reflection points.
+      importData({ ...imported, objects: imported.objects.filter((o: { kind: string }) => o.kind !== "panel" && o.kind !== "bass") }, "demo load");
       onMessage(
         "Demo room loaded. Your previous progress remains in save history.",
       );
@@ -103,17 +103,6 @@ export default function FilesPanel({
   return (
     <>
       <Section title="Design & backups">
-        <label className="text-field">
-          Display units
-          <select
-            aria-label="Display units"
-            value={unit}
-            onChange={(event) => onUnit(event.target.value as "ft" | "cm")}
-          >
-            <option value="ft">Feet</option>
-            <option value="cm">Centimeters</option>
-          </select>
-        </label>
         <div className="demo-card">
           <div>
             <strong>Demo room</strong>
@@ -147,9 +136,9 @@ export default function FilesPanel({
               );
             }}
           >
-            ＋ New blank room
+            <Icon name="plus"/><span>New blank room<small>Start fresh; current work is saved</small></span>
           </button>
-          <button onClick={onHistory}>View save history</button>
+          <button onClick={onHistory}><Icon name="Saves"/><span>View save history<small>Restore an earlier milestone</small></span></button>
           <button
             onClick={() => {
               const studio = useStudio.getState();
@@ -160,7 +149,7 @@ export default function FilesPanel({
               onMessage("Design and reusable library exported.");
             }}
           >
-            Export design JSON
+            <Icon name="Files"/><span>Export design JSON<small>Current room and object library</small></span>
           </button>
           <button
             onClick={() => {
@@ -173,9 +162,9 @@ export default function FilesPanel({
               );
             }}
           >
-            Export workspace history
+            <Icon name="save"/><span>Export workspace history<small>Complete backup, including every save</small></span>
           </button>
-          <button onClick={() => input.current?.click()}>Import JSON</button>
+          <button onClick={() => input.current?.click()}><Icon name="Files"/><span>Import JSON<small>Open a design or workspace backup</small></span></button>
         </div>
         <input
           ref={input}
@@ -186,19 +175,17 @@ export default function FilesPanel({
           onChange={handleFile}
         />
         <p className="hint">
-          Your working design autosaves locally. Save / Update creates a
-          permanent milestone. A full workspace export includes all saves; a
-          design export includes the current room and library.
+          Changes autosave in this browser. Export a workspace backup to keep a portable copy.
         </p>
       </Section>
-      <Section title="About reflection output">
+      <details className="model-details"><summary>About reflection output</summary>
         <p className="hint">
           Approximate specular geometric visualization, not an acoustical
           measurement or prediction. Absorption values reduce visual energy.
           Room modes, wave interference, scattering, diffraction and calibrated
           SPL are not modeled.
         </p>
-      </Section>
+      </details>
     </>
   );
 }

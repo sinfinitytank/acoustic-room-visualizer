@@ -19,7 +19,7 @@ export type Anchor = { point: Vec3; objectId?: string }
 export type Measurement = { id: string; a: Anchor; b: Anchor }
 export type Design = { version: 1; name: string; room: Room; objects: RoomObject[]; measurements: Measurement[] }
 export type Surface = { id: string; name: string; center: Vec3; normal: Vec3; u: Vec3; v: Vec3; halfU: number; halfV: number; absorption?: Coefficients; objectId?: string }
-export type ReflectionPath = { id: string; source: string; listener: string; order: 1 | 2; points: Vec3[]; surfaces: string[]; length: number; energy: number; color: string }
+export type ReflectionPath = { id: string; source: string; listener: string; order: 1 | 2; points: Vec3[]; surfaces: string[]; length: number; energy: number; segmentEnergies?: number[]; color: string }
 export const ft = (value: number) => value * 0.3048
 export const toFeet = (value: number) => value / 0.3048
 export const inches = (value: number) => value * 0.0254
@@ -86,6 +86,18 @@ export function mountObject(o: RoomObject, r: Room): RoomObject {
     default: return o
   }
 }
+export function mountTreatmentAtPoint(o: RoomObject, wall: Wall, point: Vec3, r: Room): RoomObject {
+  if (o.kind !== 'panel' && o.kind !== 'bass') return o
+  const [w, h] = o.size
+  const span = wall === 'front' || wall === 'rear' || wall === 'ceiling' || wall === 'floor' ? r.width : r.length
+  const offset = Math.min(Math.max(0, (wall === 'left' || wall === 'right') ? point[2] - w / 2 : point[0] - w / 2), Math.max(0, span - w))
+  if (wall === 'floor' || wall === 'ceiling') {
+    const z = Math.min(Math.max(0, point[2] - h / 2), Math.max(0, r.length - h))
+    return mountObject({ ...o, mount: wall, offset, ceilingOffset: z }, r)
+  }
+  const bottom = Math.min(Math.max(0, point[1] - h / 2), Math.max(0, r.height - h))
+  return mountObject({ ...o, mount: wall, offset, bottom }, r)
+}
 export function demo(): Design {
   const room = { width: ft(16), length: ft(20), height: ft(9) }
   const left = { ...makeObject('speaker', 'speaker-left'), name: 'Left speaker', position: [1.1, 0.65, 1.05] as Vec3 }
@@ -93,9 +105,7 @@ export function demo(): Design {
   const sofa = { ...makeObject('sofa', 'sofa'), position: [room.width / 2, 0, 4.15] as Vec3 }
   const a = { ...makeObject('listener', 'listener-a'), name: 'Listener A', position: [room.width / 2 - 0.4, 1.12, 4] as Vec3 }
   const b = { ...makeObject('listener', 'listener-b'), name: 'Listener B', position: [room.width / 2 + 0.4, 1.12, 4] as Vec3, color: '#c89de8' }
-  const treatments = [ ['front', 0.7, 0.8], ['front', 3.3, 0.8], ['left', 1.9, 0.8], ['right', 1.9, 0.8], ['ceiling', 1.4, 0] ].map(([mount, offset, bottom], i) => mountObject({ ...makeObject('panel', `panel-${i}`), name: `Absorber ${i + 1}`, mount: mount as Wall, offset: +offset, bottom: +bottom, ceilingOffset: 2.2 }, room))
-  const traps = (['front-left', 'front-right'] as const).map((corner, i) => mountObject({ ...makeObject('bass', `bass-${i}`), name: `Bass trap ${i + 1}`, mount: 'front', corner, size: [0.85, 1.8, 0.15], bottom: 0.05, absorption: { ...presets['Thick mineral wool'] }, color: '#a79478' }, room))
-  return { version: 1, name: 'The listening room', room, objects: [left, right, sofa, a, b, ...treatments, ...traps], measurements: [] }
+  return { version: 1, name: 'The listening room', room, objects: [left, right, sofa, a, b], measurements: [] }
 }
 export function validateDesign(value: unknown): Design {
   const fail = () => { throw new Error('Invalid design. Please import a version 1 Acoustic Room Visualizer JSON file.') }
