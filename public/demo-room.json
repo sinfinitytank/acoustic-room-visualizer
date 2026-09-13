@@ -1,0 +1,1336 @@
+{
+  "version": 1,
+  "name": "The listening room",
+  "room": {
+    "width": 4.8768,
+    "length": 6.096,
+    "height": 2.7432000000000003
+  },
+  "objects": [
+    {
+      "id": "speaker-left",
+      "kind": "speaker",
+      "name": "Left speaker",
+      "position": [
+        1.1,
+        0.65,
+        1.05
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.24,
+        0.4,
+        0.31
+      ],
+      "visible": true,
+      "reflect": true,
+      "color": "#bc9871",
+      "stand": {
+        "height": 0.65,
+        "width": 0.34,
+        "depth": 0.38,
+        "postWidth": 0.065
+      },
+      "tweeter": 0.3,
+      "mount": "free",
+      "corner": "front-left",
+      "offset": 1,
+      "bottom": 0.7,
+      "ceilingOffset": 1,
+      "absorption": {
+        "125": 0.52,
+        "250": 0.76,
+        "500": 0.88,
+        "1000": 1,
+        "2000": 1,
+        "4000": 1
+      },
+      "curve": [
+        {
+          "frequency": 32,
+          "coefficient": 0.1
+        },
+        {
+          "frequency": 63,
+          "coefficient": 0.27
+        },
+        {
+          "frequency": 125,
+          "coefficient": 0.52
+        },
+        {
+          "frequency": 250,
+          "coefficient": 0.76
+        },
+        {
+          "frequency": 500,
+          "coefficient": 0.88
+        },
+        {
+          "frequency": 1000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 2000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 4000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 20000,
+          "coefficient": 1
+        }
+      ],
+      "placed": false
+    },
+    {
+      "id": "speaker-right",
+      "kind": "speaker",
+      "name": "Right speaker",
+      "position": [
+        3.7768,
+        0.65,
+        1.05
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.24,
+        0.4,
+        0.31
+      ],
+      "visible": true,
+      "reflect": true,
+      "color": "#bc9871",
+      "stand": {
+        "height": 0.65,
+        "width": 0.34,
+        "depth": 0.38,
+        "postWidth": 0.065
+      },
+      "tweeter": 0.3,
+      "mount": "free",
+      "corner": "front-left",
+      "offset": 1,
+      "bottom": 0.7,
+      "ceilingOffset": 1,
+      "absorption": {
+        "125": 0.52,
+        "250": 0.76,
+        "500": 0.88,
+        "1000": 1,
+        "2000": 1,
+        "4000": 1
+      },
+      "curve": [
+        {
+          "frequency": 32,
+          "coefficient": 0.1
+        },
+        {
+          "frequency": 63,
+          "coefficient": 0.27
+        },
+        {
+          "frequency": 125,
+          "coefficient": 0.52
+        },
+        {
+          "frequency": 250,
+          "coefficient": 0.76
+        },
+        {
+          "frequency": 500,
+          "coefficient": 0.88
+        },
+        {
+          "frequency": 1000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 2000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 4000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 20000,
+          "coefficient": 1
+        }
+      ],
+      "placed": false
+    },
+    {
+      "id": "sofa",
+      "kind": "sofa",
+      "name": "Sofa",
+      "position": [
+        2.4384,
+        0,
+        4.15
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        0.82,
+        0.85
+      ],
+      "visible": true,
+      "reflect": true,
+      "color": "#68766e",
+      "stand": {
+        "height": 0.65,
+        "width": 0.34,
+        "depth": 0.38,
+        "postWidth": 0.065
+      },
+      "tweeter": 0.3,
+      "mount": "free",
+      "corner": "front-left",
+      "offset": 1,
+      "bottom": 0.7,
+      "ceilingOffset": 1,
+      "absorption": {
+        "125": 0.52,
+        "250": 0.76,
+        "500": 0.88,
+        "1000": 1,
+        "2000": 1,
+        "4000": 1
+      },
+      "curve": [
+        {
+          "frequency": 32,
+          "coefficient": 0.1
+        },
+        {
+          "frequency": 63,
+          "coefficient": 0.27
+        },
+        {
+          "frequency": 125,
+          "coefficient": 0.52
+        },
+        {
+          "frequency": 250,
+          "coefficient": 0.76
+        },
+        {
+          "frequency": 500,
+          "coefficient": 0.88
+        },
+        {
+          "frequency": 1000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 2000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 4000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 20000,
+          "coefficient": 1
+        }
+      ],
+      "placed": false
+    },
+    {
+      "id": "listener-a",
+      "kind": "listener",
+      "name": "Listener A",
+      "position": [
+        2.0384,
+        1.12,
+        4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.2,
+        0.2,
+        0.2
+      ],
+      "visible": true,
+      "reflect": true,
+      "color": "#e5b66c",
+      "stand": {
+        "height": 0.65,
+        "width": 0.34,
+        "depth": 0.38,
+        "postWidth": 0.065
+      },
+      "tweeter": 0.3,
+      "mount": "free",
+      "corner": "front-left",
+      "offset": 1,
+      "bottom": 0.7,
+      "ceilingOffset": 1,
+      "absorption": {
+        "125": 0.52,
+        "250": 0.76,
+        "500": 0.88,
+        "1000": 1,
+        "2000": 1,
+        "4000": 1
+      },
+      "curve": [
+        {
+          "frequency": 32,
+          "coefficient": 0.1
+        },
+        {
+          "frequency": 63,
+          "coefficient": 0.27
+        },
+        {
+          "frequency": 125,
+          "coefficient": 0.52
+        },
+        {
+          "frequency": 250,
+          "coefficient": 0.76
+        },
+        {
+          "frequency": 500,
+          "coefficient": 0.88
+        },
+        {
+          "frequency": 1000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 2000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 4000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 20000,
+          "coefficient": 1
+        }
+      ],
+      "placed": false
+    },
+    {
+      "id": "listener-b",
+      "kind": "listener",
+      "name": "Listener B",
+      "position": [
+        2.8384,
+        1.12,
+        4
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.2,
+        0.2,
+        0.2
+      ],
+      "visible": true,
+      "reflect": true,
+      "color": "#c89de8",
+      "stand": {
+        "height": 0.65,
+        "width": 0.34,
+        "depth": 0.38,
+        "postWidth": 0.065
+      },
+      "tweeter": 0.3,
+      "mount": "free",
+      "corner": "front-left",
+      "offset": 1,
+      "bottom": 0.7,
+      "ceilingOffset": 1,
+      "absorption": {
+        "125": 0.52,
+        "250": 0.76,
+        "500": 0.88,
+        "1000": 1,
+        "2000": 1,
+        "4000": 1
+      },
+      "curve": [
+        {
+          "frequency": 32,
+          "coefficient": 0.1
+        },
+        {
+          "frequency": 63,
+          "coefficient": 0.27
+        },
+        {
+          "frequency": 125,
+          "coefficient": 0.52
+        },
+        {
+          "frequency": 250,
+          "coefficient": 0.76
+        },
+        {
+          "frequency": 500,
+          "coefficient": 0.88
+        },
+        {
+          "frequency": 1000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 2000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 4000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 20000,
+          "coefficient": 1
+        }
+      ],
+      "placed": false
+    },
+    {
+      "id": "panel-0",
+      "kind": "panel",
+      "name": "Absorber 1",
+      "position": [
+        1.005,
+        1.4100000000000001,
+        0.0334
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.61,
+        1.22,
+        0.0508
+      ],
+      "visible": true,
+      "reflect": true,
+      "color": "#758b80",
+      "stand": {
+        "height": 0.65,
+        "width": 0.34,
+        "depth": 0.38,
+        "postWidth": 0.065
+      },
+      "tweeter": 0.3,
+      "mount": "front",
+      "corner": "front-left",
+      "offset": 0.7,
+      "bottom": 0.8,
+      "ceilingOffset": 2.2,
+      "absorption": {
+        "125": 0.18,
+        "250": 0.44,
+        "500": 0.72,
+        "1000": 1,
+        "2000": 0.99,
+        "4000": 1
+      },
+      "curve": [
+        {
+          "frequency": 32,
+          "coefficient": 0.03
+        },
+        {
+          "frequency": 63,
+          "coefficient": 0.06
+        },
+        {
+          "frequency": 125,
+          "coefficient": 0.18
+        },
+        {
+          "frequency": 250,
+          "coefficient": 0.44
+        },
+        {
+          "frequency": 500,
+          "coefficient": 0.72
+        },
+        {
+          "frequency": 1000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 2000,
+          "coefficient": 0.99
+        },
+        {
+          "frequency": 4000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 20000,
+          "coefficient": 1
+        }
+      ],
+      "placed": false,
+      "thicknessMode": "2"
+    },
+    {
+      "id": "panel-1",
+      "kind": "panel",
+      "name": "Absorber 2",
+      "position": [
+        3.605,
+        1.4100000000000001,
+        0.0588
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.61,
+        1.22,
+        0.1016
+      ],
+      "visible": true,
+      "reflect": true,
+      "color": "#758b80",
+      "stand": {
+        "height": 0.65,
+        "width": 0.34,
+        "depth": 0.38,
+        "postWidth": 0.065
+      },
+      "tweeter": 0.3,
+      "mount": "front",
+      "corner": "front-left",
+      "offset": 3.3,
+      "bottom": 0.8,
+      "ceilingOffset": 2.2,
+      "absorption": {
+        "125": 0.52,
+        "250": 0.76,
+        "500": 0.88,
+        "1000": 1,
+        "2000": 1,
+        "4000": 1
+      },
+      "curve": [
+        {
+          "frequency": 32,
+          "coefficient": 0.1
+        },
+        {
+          "frequency": 63,
+          "coefficient": 0.27
+        },
+        {
+          "frequency": 125,
+          "coefficient": 0.52
+        },
+        {
+          "frequency": 250,
+          "coefficient": 0.76
+        },
+        {
+          "frequency": 500,
+          "coefficient": 0.88
+        },
+        {
+          "frequency": 1000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 2000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 4000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 20000,
+          "coefficient": 1
+        }
+      ],
+      "placed": false,
+      "thicknessMode": "4"
+    },
+    {
+      "id": "panel-2",
+      "kind": "panel",
+      "name": "Absorber 3",
+      "position": [
+        0.0842,
+        1.4100000000000001,
+        2.205
+      ],
+      "rotation": [
+        0,
+        1.5707963267948966,
+        0
+      ],
+      "size": [
+        0.61,
+        1.22,
+        0.15239999999999998
+      ],
+      "visible": true,
+      "reflect": true,
+      "color": "#758b80",
+      "stand": {
+        "height": 0.65,
+        "width": 0.34,
+        "depth": 0.38,
+        "postWidth": 0.065
+      },
+      "tweeter": 0.3,
+      "mount": "left",
+      "corner": "front-left",
+      "offset": 1.9,
+      "bottom": 0.8,
+      "ceilingOffset": 2.2,
+      "absorption": {
+        "125": 0.77,
+        "250": 0.85,
+        "500": 0.89,
+        "1000": 1,
+        "2000": 1,
+        "4000": 1
+      },
+      "curve": [
+        {
+          "frequency": 32,
+          "coefficient": 0.24
+        },
+        {
+          "frequency": 63,
+          "coefficient": 0.54
+        },
+        {
+          "frequency": 125,
+          "coefficient": 0.77
+        },
+        {
+          "frequency": 250,
+          "coefficient": 0.85
+        },
+        {
+          "frequency": 500,
+          "coefficient": 0.89
+        },
+        {
+          "frequency": 1000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 2000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 4000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 20000,
+          "coefficient": 1
+        }
+      ],
+      "placed": false,
+      "thicknessMode": "6"
+    },
+    {
+      "id": "panel-3",
+      "kind": "panel",
+      "name": "Absorber 4",
+      "position": [
+        4.8434,
+        1.4100000000000001,
+        2.205
+      ],
+      "rotation": [
+        0,
+        -1.5707963267948966,
+        0
+      ],
+      "size": [
+        0.61,
+        1.22,
+        0.0508
+      ],
+      "visible": true,
+      "reflect": true,
+      "color": "#758b80",
+      "stand": {
+        "height": 0.65,
+        "width": 0.34,
+        "depth": 0.38,
+        "postWidth": 0.065
+      },
+      "tweeter": 0.3,
+      "mount": "right",
+      "corner": "front-left",
+      "offset": 1.9,
+      "bottom": 0.8,
+      "ceilingOffset": 2.2,
+      "absorption": {
+        "125": 0.18,
+        "250": 0.44,
+        "500": 0.72,
+        "1000": 1,
+        "2000": 0.99,
+        "4000": 1
+      },
+      "curve": [
+        {
+          "frequency": 32,
+          "coefficient": 0.03
+        },
+        {
+          "frequency": 63,
+          "coefficient": 0.06
+        },
+        {
+          "frequency": 125,
+          "coefficient": 0.18
+        },
+        {
+          "frequency": 250,
+          "coefficient": 0.44
+        },
+        {
+          "frequency": 500,
+          "coefficient": 0.72
+        },
+        {
+          "frequency": 1000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 2000,
+          "coefficient": 0.99
+        },
+        {
+          "frequency": 4000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 20000,
+          "coefficient": 1
+        }
+      ],
+      "placed": false,
+      "thicknessMode": "2"
+    },
+    {
+      "id": "panel-4",
+      "kind": "panel",
+      "name": "Absorber 5",
+      "position": [
+        1.7049999999999998,
+        2.6844,
+        2.81
+      ],
+      "rotation": [
+        1.5707963267948966,
+        0,
+        0
+      ],
+      "size": [
+        0.61,
+        1.22,
+        0.1016
+      ],
+      "visible": true,
+      "reflect": true,
+      "color": "#758b80",
+      "stand": {
+        "height": 0.65,
+        "width": 0.34,
+        "depth": 0.38,
+        "postWidth": 0.065
+      },
+      "tweeter": 0.3,
+      "mount": "ceiling",
+      "corner": "front-left",
+      "offset": 1.4,
+      "bottom": 0,
+      "ceilingOffset": 2.2,
+      "absorption": {
+        "125": 0.52,
+        "250": 0.76,
+        "500": 0.88,
+        "1000": 1,
+        "2000": 1,
+        "4000": 1
+      },
+      "curve": [
+        {
+          "frequency": 32,
+          "coefficient": 0.1
+        },
+        {
+          "frequency": 63,
+          "coefficient": 0.27
+        },
+        {
+          "frequency": 125,
+          "coefficient": 0.52
+        },
+        {
+          "frequency": 250,
+          "coefficient": 0.76
+        },
+        {
+          "frequency": 500,
+          "coefficient": 0.88
+        },
+        {
+          "frequency": 1000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 2000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 4000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 20000,
+          "coefficient": 1
+        }
+      ],
+      "placed": false,
+      "thicknessMode": "4"
+    },
+    {
+      "id": "bass-0",
+      "kind": "bass",
+      "name": "Bass trap 1",
+      "position": [
+        0.37672038200428265,
+        0.9500000000000001,
+        0.37672038200428265
+      ],
+      "rotation": [
+        0,
+        0.7853981633974483,
+        0
+      ],
+      "size": [
+        0.85,
+        1.8,
+        0.15239999999999998
+      ],
+      "visible": true,
+      "reflect": true,
+      "color": "#a79478",
+      "stand": {
+        "height": 0.65,
+        "width": 0.34,
+        "depth": 0.38,
+        "postWidth": 0.065
+      },
+      "tweeter": 0.3,
+      "mount": "front",
+      "corner": "front-left",
+      "offset": 1,
+      "bottom": 0.05,
+      "ceilingOffset": 1,
+      "absorption": {
+        "125": 0.77,
+        "250": 0.85,
+        "500": 0.89,
+        "1000": 1,
+        "2000": 1,
+        "4000": 1
+      },
+      "curve": [
+        {
+          "frequency": 32,
+          "coefficient": 0.24
+        },
+        {
+          "frequency": 63,
+          "coefficient": 0.54
+        },
+        {
+          "frequency": 125,
+          "coefficient": 0.77
+        },
+        {
+          "frequency": 250,
+          "coefficient": 0.85
+        },
+        {
+          "frequency": 500,
+          "coefficient": 0.89
+        },
+        {
+          "frequency": 1000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 2000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 4000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 20000,
+          "coefficient": 1
+        }
+      ],
+      "placed": false,
+      "thicknessMode": "6"
+    },
+    {
+      "id": "bass-1",
+      "kind": "bass",
+      "name": "Bass trap 2",
+      "position": [
+        4.550879617995718,
+        0.9500000000000001,
+        0.32592038200428264
+      ],
+      "rotation": [
+        0,
+        -0.7853981633974483,
+        0
+      ],
+      "size": [
+        0.85,
+        1.8,
+        0.0508
+      ],
+      "visible": true,
+      "reflect": true,
+      "color": "#a79478",
+      "stand": {
+        "height": 0.65,
+        "width": 0.34,
+        "depth": 0.38,
+        "postWidth": 0.065
+      },
+      "tweeter": 0.3,
+      "mount": "front",
+      "corner": "front-right",
+      "offset": 1,
+      "bottom": 0.05,
+      "ceilingOffset": 1,
+      "absorption": {
+        "125": 0.18,
+        "250": 0.44,
+        "500": 0.72,
+        "1000": 1,
+        "2000": 0.99,
+        "4000": 1
+      },
+      "curve": [
+        {
+          "frequency": 32,
+          "coefficient": 0.03
+        },
+        {
+          "frequency": 63,
+          "coefficient": 0.06
+        },
+        {
+          "frequency": 125,
+          "coefficient": 0.18
+        },
+        {
+          "frequency": 250,
+          "coefficient": 0.44
+        },
+        {
+          "frequency": 500,
+          "coefficient": 0.72
+        },
+        {
+          "frequency": 1000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 2000,
+          "coefficient": 0.99
+        },
+        {
+          "frequency": 4000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 20000,
+          "coefficient": 1
+        }
+      ],
+      "placed": false,
+      "thicknessMode": "2"
+    }
+  ],
+  "measurements": [],
+  "library": [
+    {
+      "id": "library-panel",
+      "kind": "panel",
+      "name": "Absorption panel",
+      "position": [
+        2,
+        1.3,
+        2
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.61,
+        1.22,
+        0.1016
+      ],
+      "visible": true,
+      "reflect": true,
+      "color": "#758b80",
+      "stand": {
+        "height": 0.65,
+        "width": 0.34,
+        "depth": 0.38,
+        "postWidth": 0.065
+      },
+      "tweeter": 0.3,
+      "mount": "free",
+      "corner": "front-left",
+      "offset": 1,
+      "bottom": 0.7,
+      "ceilingOffset": 1,
+      "absorption": {
+        "125": 0.52,
+        "250": 0.76,
+        "500": 0.88,
+        "1000": 1,
+        "2000": 1,
+        "4000": 1
+      },
+      "curve": [
+        {
+          "frequency": 32,
+          "coefficient": 0.1
+        },
+        {
+          "frequency": 63,
+          "coefficient": 0.27
+        },
+        {
+          "frequency": 125,
+          "coefficient": 0.52
+        },
+        {
+          "frequency": 250,
+          "coefficient": 0.76
+        },
+        {
+          "frequency": 500,
+          "coefficient": 0.88
+        },
+        {
+          "frequency": 1000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 2000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 4000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 20000,
+          "coefficient": 1
+        }
+      ],
+      "placed": false,
+      "thicknessMode": "4"
+    },
+    {
+      "id": "library-bass",
+      "kind": "bass",
+      "name": "Corner bass trap",
+      "position": [
+        2,
+        1.3,
+        2
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.85,
+        1.8,
+        0.15239999999999998
+      ],
+      "visible": true,
+      "reflect": true,
+      "color": "#a79478",
+      "stand": {
+        "height": 0.65,
+        "width": 0.34,
+        "depth": 0.38,
+        "postWidth": 0.065
+      },
+      "tweeter": 0.3,
+      "mount": "free",
+      "corner": "front-left",
+      "offset": 1,
+      "bottom": 0.7,
+      "ceilingOffset": 1,
+      "absorption": {
+        "125": 0.77,
+        "250": 0.85,
+        "500": 0.89,
+        "1000": 1,
+        "2000": 1,
+        "4000": 1
+      },
+      "curve": [
+        {
+          "frequency": 32,
+          "coefficient": 0.24
+        },
+        {
+          "frequency": 63,
+          "coefficient": 0.54
+        },
+        {
+          "frequency": 125,
+          "coefficient": 0.77
+        },
+        {
+          "frequency": 250,
+          "coefficient": 0.85
+        },
+        {
+          "frequency": 500,
+          "coefficient": 0.89
+        },
+        {
+          "frequency": 1000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 2000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 4000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 20000,
+          "coefficient": 1
+        }
+      ],
+      "placed": false,
+      "thicknessMode": "6"
+    },
+    {
+      "id": "library-speaker",
+      "kind": "speaker",
+      "name": "Speaker",
+      "position": [
+        2,
+        1.3,
+        2
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        0.24,
+        0.4,
+        0.31
+      ],
+      "visible": true,
+      "reflect": true,
+      "color": "#bc9871",
+      "stand": {
+        "height": 0.65,
+        "width": 0.34,
+        "depth": 0.38,
+        "postWidth": 0.065
+      },
+      "tweeter": 0.3,
+      "mount": "free",
+      "corner": "front-left",
+      "offset": 1,
+      "bottom": 0.7,
+      "ceilingOffset": 1,
+      "absorption": {
+        "125": 1,
+        "250": 1,
+        "500": 1,
+        "1000": 1,
+        "2000": 1,
+        "4000": 1
+      },
+      "curve": [
+        {
+          "frequency": 32,
+          "coefficient": 0.1
+        },
+        {
+          "frequency": 63,
+          "coefficient": 0.27
+        },
+        {
+          "frequency": 125,
+          "coefficient": 0.52
+        },
+        {
+          "frequency": 250,
+          "coefficient": 0.76
+        },
+        {
+          "frequency": 500,
+          "coefficient": 0.88
+        },
+        {
+          "frequency": 1000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 2000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 4000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 20000,
+          "coefficient": 1
+        }
+      ],
+      "placed": false,
+      "standTemplateId": "library-stand"
+    },
+    {
+      "id": "library-sofa",
+      "kind": "sofa",
+      "name": "Sofa",
+      "position": [
+        2,
+        1.3,
+        2
+      ],
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "size": [
+        2,
+        0.82,
+        0.85
+      ],
+      "visible": true,
+      "reflect": true,
+      "color": "#68766e",
+      "stand": {
+        "height": 0.65,
+        "width": 0.34,
+        "depth": 0.38,
+        "postWidth": 0.065
+      },
+      "tweeter": 0.3,
+      "mount": "free",
+      "corner": "front-left",
+      "offset": 1,
+      "bottom": 0.7,
+      "ceilingOffset": 1,
+      "absorption": {
+        "125": 1,
+        "250": 1,
+        "500": 1,
+        "1000": 1,
+        "2000": 1,
+        "4000": 1
+      },
+      "curve": [
+        {
+          "frequency": 32,
+          "coefficient": 0.1
+        },
+        {
+          "frequency": 63,
+          "coefficient": 0.27
+        },
+        {
+          "frequency": 125,
+          "coefficient": 0.52
+        },
+        {
+          "frequency": 250,
+          "coefficient": 0.76
+        },
+        {
+          "frequency": 500,
+          "coefficient": 0.88
+        },
+        {
+          "frequency": 1000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 2000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 4000,
+          "coefficient": 1
+        },
+        {
+          "frequency": 20000,
+          "coefficient": 1
+        }
+      ],
+      "placed": false
+    }
+  ]
+}

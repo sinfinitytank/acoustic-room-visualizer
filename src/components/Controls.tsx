@@ -1,36 +1,523 @@
-import { useEffect, useState } from 'react'
-import type { ReactNode } from 'react'
-import { distanceLabel, mountObject, presets, bands, toFeet, ft, inches, walls } from '../domain/model'
-import type { RoomObject, Vec3, Wall } from '../domain/model'
-import { useStudio } from '../domain/store'
-import { snapToSurface } from '../domain/placement'
-export function Section({ title, children, extra }: { title: string; children: ReactNode; extra?: ReactNode }) { return <section className="control-section"><div className="section-heading"><h2>{title}</h2>{extra}</div>{children}</section> }
-export function Toggle({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) { return <label className="toggle-row"><span>{label}</span><input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} /></label> }
-export function NumberField({ label, value, onChange, min = -100, max = 100, step = 0.1, suffix = '' }: { label: string; value: number; onChange: (v: number) => void; min?: number; max?: number; step?: number; suffix?: string }) {
-  const [draft, setDraft] = useState<string | null>(null)
-  const apply = (raw: string) => { const n = Number(raw); if (raw.trim() && Number.isFinite(n)) onChange(Math.min(max, Math.max(min, n))); setDraft(null) }
-  return <label className="number-row"><span>{label}</span><div><input aria-label={label} type="number" value={draft ?? +value.toFixed(3)} min={min} max={max} step={step} onChange={e => setDraft(e.target.value)} onBlur={e => apply(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') e.currentTarget.blur(); if (e.key === 'Escape') setDraft(null) }} /><small>{suffix}</small></div></label>
+import ThicknessControl from './ThicknessControl';
+import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
+import { distanceLabel, mountObject, toFeet, ft, walls } from "../domain/model";
+import type { RoomObject, Vec3, Wall } from "../domain/model";
+import { useStudio } from "../domain/store";
+import { snapToSurface } from "../domain/placement";
+export function Section({
+  title,
+  children,
+  extra,
+}: {
+  title: string;
+  children: ReactNode;
+  extra?: ReactNode;
+}) {
+  return (
+    <details className="control-section" open>
+      <summary className="section-heading">
+        <h2>{title}</h2>
+        {extra}
+      </summary>
+      {children}
+    </details>
+  );
 }
-export function ObjectEditor({ o, unit }: { o: RoomObject; unit: 'ft' | 'm' }) {
-  const patch = useStudio(s => s.patch), r = useStudio(s => s.design.room)
-  const treatment = o.kind === 'panel' || o.kind === 'bass'
-  const display = unit === 'ft' ? toFeet : (n: number) => n, convert = unit === 'ft' ? ft : (n: number) => n
-  const field = (label: string, value: number, set: (v: number) => void, min = 0, max = 30) => <NumberField key={label} label={label} value={display(value)} min={display(min)} max={display(max)} suffix={unit} onChange={v => set(convert(v))} />
-  const pos = (i: number, n: number) => { const p = [...o.position] as Vec3; p[i] = n; patch(o.id, { position: p, mount: 'free', ...(o.kind === 'speaker' && i === 1 ? { stand: { ...o.stand, height: n } } : {}) }) }
-  const size = (i: number, n: number) => { const s = [...o.size] as Vec3; s[i] = n; patch(o.id, { size: s }) }
-  if (o.parentSofaId) return <Section title={o.name}><p className="model-notice">This listener stays seated on its sofa automatically. Move or rotate the sofa to change the listening position.</p><Toggle label="Visible" checked={o.visible} onChange={visible => patch(o.id, { visible })} /></Section>
-  return <><Section title="Object properties" extra={<span className="badge">{o.kind}</span>}><label className="text-field">Name<input aria-label="Object name" value={o.name} maxLength={100} onChange={e => patch(o.id, { name: e.target.value })} /></label><div className="color-row"><label>Finish <input aria-label="Object color" type="color" value={o.color} onChange={e => patch(o.id, { color: e.target.value })} /></label><span>{o.color}</span></div><Toggle label="Visible" checked={o.visible} onChange={visible => patch(o.id, { visible })} />{(treatment || o.kind === 'speaker') && <Toggle label="Include reflections" checked={o.reflect} onChange={reflect => patch(o.id, { reflect })} />}
-      {o.kind !== 'listener' && <>{field('Width', o.size[0], n => size(0, n), 0.05, 10)}{field(treatment ? 'Length' : 'Height', o.size[1], n => size(1, n), 0.05, 10)}{treatment ? <NumberField label="Thickness" value={o.size[2] / 0.0254} suffix="in" min={0.25} max={24} onChange={v => size(2, inches(v))} /> : field('Depth', o.size[2], n => size(2, n), 0.05, 10)}</>}
-      {o.kind === 'speaker' && <>{field('Stand height', o.stand.height, n => { const p = [...o.position] as Vec3; p[1] = n; patch(o.id, { stand: { ...o.stand, height: n }, position: p }) }, 0, r.height)}{field('Tweeter above cabinet base', o.tweeter, n => patch(o.id, { tweeter: n }), 0, o.size[1])}<p className="hint">Acoustic center: {distanceLabel(o.position[1] + o.tweeter, unit)} above floor. Wall offsets locate the cabinet center.</p></>}
-    </Section><Section title="Placement">{treatment && <><label className="text-field">Mounting surface<select aria-label="Mounting surface" value={o.mount} onChange={e => patch(o.id, { mount: e.target.value as Wall | 'free' })}><option value="free">Free placement</option>{walls.map(w => <option key={w}>{w}</option>)}</select></label>{o.kind === 'bass' && <label className="text-field">Corner<select aria-label="Corner" value={o.corner} onChange={e => patch(o.id, { corner: e.target.value as RoomObject['corner'], mount: 'front' })}>{['front-left', 'front-right', 'rear-left', 'rear-right'].map(c => <option key={c}>{c}</option>)}</select></label>}{o.mount !== 'free' && <>{field(o.mount === 'ceiling' || o.mount === 'floor' ? 'Offset from left edge' : 'Lateral offset', o.offset, offset => patch(o.id, { offset }), 0, Math.max(r.width, r.length))}{o.mount === 'ceiling' || o.mount === 'floor' ? field('Offset from front edge', o.ceilingOffset, ceilingOffset => patch(o.id, { ceilingOffset }), 0, r.length) : field('Bottom edge above floor', o.bottom, bottom => patch(o.id, { bottom }), 0, r.height)}</>}<div className="button-pair"><button onClick={() => patch(o.id, { size: [Math.min(o.size[0], o.size[1]), Math.max(o.size[0], o.size[1]), o.size[2]] })}>Vertical</button><button onClick={() => patch(o.id, { size: [Math.max(o.size[0], o.size[1]), Math.min(o.size[0], o.size[1]), o.size[2]] })}>Horizontal</button></div></>}
-      {(!treatment || o.mount === 'free') && <>{field(o.kind === 'speaker' ? o.id === 'speaker-right' ? 'From right wall' : 'From left wall' : 'X · from left wall', o.id === 'speaker-right' ? r.width - o.position[0] : o.position[0], n => pos(0, o.id === 'speaker-right' ? r.width - n : n), 0, r.width)}{field(o.kind === 'listener' ? 'Y · ear height' : 'Y · above floor', o.position[1], n => pos(1, n), 0, r.height)}{field('Z · from front wall', o.position[2], n => pos(2, n), 0, r.length)}{(['X', 'Y', 'Z'] as const).map((axis, i) => <NumberField key={axis} label={`Rotate ${axis}`} value={o.rotation[i] * 180 / Math.PI} min={-360} max={360} step={5} suffix="°" onChange={n => { const rotation = [...o.rotation] as Vec3; rotation[i] = n * Math.PI / 180; patch(o.id, { rotation }) }} />)}</>}
-      <label className="text-field">Snap object to room surface<select aria-label="Snap object to room surface" value="" onChange={e => { if (e.target.value) patch(o.id, { position: snapToSurface(o, r, e.target.value as Wall), mount: 'free' }) }}><option value="">Choose a surface…</option>{walls.map(w => <option key={w}>{w}</option>)}</select></label><p className="hint">Move or rotate with the viewport gizmo. Dragging releases a mounted panel into free placement. Select a mounting surface to snap it back.</p>
-    </Section>{treatment && <Section title="Absorption coefficients" extra={<span className="badge">0–1</span>}><label className="text-field">Material preset<select aria-label="Material preset" value="" onChange={e => { if (presets[e.target.value]) patch(o.id, { absorption: { ...presets[e.target.value] } }) }}><option value="">Choose a preset…</option>{Object.keys(presets).map(p => <option key={p}>{p}</option>)}</select></label>{bands.map(b => <NumberField key={b} label={`${+b >= 1000 ? +b / 1000 + ' k' : b + ' '}Hz`} value={o.absorption[b]} min={0} max={1} step={0.01} onChange={n => patch(o.id, { absorption: { ...o.absorption, [b]: n } })} />)}<div className="stat-line">NRC-style average <b>{((o.absorption['250'] + o.absorption['500'] + o.absorption['1000'] + o.absorption['2000']) / 4).toFixed(2)}</b></div><p className="hint">Informational arithmetic average, not a certified NRC. Coefficients attenuate visual ray energy only; no full acoustic simulation is performed.</p></Section>}</>
+export function Toggle({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <label className="toggle-row">
+      <span>{label}</span>
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+    </label>
+  );
 }
-export function RoomEditor({ unit }: { unit: 'ft' | 'm' }) {
-  const d = useStudio(s => s.design), commit = useStudio(s => s.commit)
-  return <Section title="Room dimensions" extra={<span className="badge">{unit === 'ft' ? 'FEET' : 'METERS'}</span>}>{(['length', 'width', 'height'] as const).map(k => <NumberField key={k} label={k[0].toUpperCase() + k.slice(1)} value={unit === 'ft' ? toFeet(d.room[k]) : d.room[k]} min={unit === 'ft' ? toFeet(1) : 1} max={unit === 'ft' ? toFeet(30) : 30} suffix={unit} onChange={v => { const room = { ...d.room, [k]: unit === 'ft' ? ft(v) : v }; commit({ ...d, room, objects: d.objects.map(o => mountObject(o, room)) }) }} />)}<div className="stat-line">Room volume <b>{(d.room.width * d.room.length * d.room.height * (unit === 'ft' ? 35.3147 : 1)).toFixed(1)} {unit}³</b></div><p className="hint">Front-left floor origin. X → width · Y ↑ height · Z → rear.</p></Section>
+export function NumberField({
+  label,
+  value,
+  onChange,
+  min = -100,
+  max = 100,
+  step = 0.1,
+  suffix = "",
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+  suffix?: string;
+}) {
+  const [draft, setDraft] = useState<string | null>(null);
+  const apply = (raw: string) => {
+    const n = Number(raw);
+    if (raw.trim() && Number.isFinite(n))
+      onChange(Math.min(max, Math.max(min, n)));
+    setDraft(null);
+  };
+  return (
+    <label className="number-row">
+      <span>{label}</span>
+      <div>
+        <input
+          aria-label={label}
+          type="number"
+          value={draft ?? +value.toFixed(3)}
+          min={min}
+          max={max}
+          step={step}
+          onChange={(e) => setDraft(e.target.value)}
+          onBlur={(e) => apply(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.currentTarget.blur();
+            if (e.key === "Escape") setDraft(null);
+          }}
+        />
+        <small>{suffix}</small>
+      </div>
+    </label>
+  );
+}
+export function ObjectEditor({
+  o,
+  unit,
+}: {
+  o: RoomObject;
+  unit: "ft" | "cm";
+}) {
+  const patch = useStudio((s) => s.patch),
+    r = useStudio((s) => s.design.room);
+  const treatment = o.kind === "panel" || o.kind === "bass";
+  const display = unit === "ft" ? toFeet : (n: number) => n * 100,
+    convert = unit === "ft" ? ft : (n: number) => n / 100;
+  const field = (
+    label: string,
+    value: number,
+    set: (v: number) => void,
+    min = 0,
+    max = 30,
+  ) => (
+    <NumberField
+      key={label}
+      label={label}
+      value={display(value)}
+      min={display(min)}
+      max={display(max)}
+      suffix={unit}
+      onChange={(v) => set(convert(v))}
+    />
+  );
+  const pos = (i: number, n: number) => {
+    const p = [...o.position] as Vec3;
+    p[i] = n;
+    patch(o.id, {
+      position: p,
+      mount: "free",
+      ...(o.kind === "speaker" && i === 1
+        ? { stand: { ...o.stand, height: n } }
+        : {}),
+    });
+  };
+  const size = (i: number, n: number) => {
+    const s = [...o.size] as Vec3;
+    s[i] = n;
+    patch(o.id, { size: s });
+  };
+  if (o.parentSofaId)
+    return (
+      <Section title={o.name}>
+        <p className="model-notice">
+          This listener stays seated on its sofa automatically. Move or rotate
+          the sofa to change the listening position.
+        </p>
+        <Toggle
+          label="Visible"
+          checked={o.visible}
+          onChange={(visible) => patch(o.id, { visible })}
+        />
+      </Section>
+    );
+  return (
+    <>
+      <Section
+        title="Object properties"
+        extra={
+          <>
+            <span className="badge">{o.kind}</span>
+            <button
+              className={o.placed ? "active" : "primary"}
+              onClick={() => patch(o.id, { placed: !o.placed })}
+            >
+              {o.placed ? "Placed · unlock" : "Place & lock"}
+            </button>
+          </>
+        }
+      >
+        <label className="text-field">
+          Name
+          <input
+            aria-label="Object name"
+            value={o.name}
+            maxLength={100}
+            onChange={(e) => patch(o.id, { name: e.target.value })}
+          />
+        </label>
+        <div className="color-row">
+          <label>
+            Finish{" "}
+            <input
+              aria-label="Object color"
+              type="color"
+              value={o.color}
+              onChange={(e) => patch(o.id, { color: e.target.value })}
+            />
+          </label>
+          <span>{o.color}</span>
+        </div>
+        <Toggle
+          label="Visible"
+          checked={o.visible}
+          onChange={(visible) => patch(o.id, { visible })}
+        />
+        {(treatment || o.kind === "speaker") && (
+          <Toggle
+            label="Include reflections"
+            checked={o.reflect}
+            onChange={(reflect) => patch(o.id, { reflect })}
+          />
+        )}
+        {o.kind !== "listener" && (
+          <>
+            {field("Width", o.size[0], (n) => size(0, n), 0.05, 10)}
+            {field(
+              treatment ? "Length" : "Height",
+              o.size[1],
+              (n) => size(1, n),
+              0.05,
+              10,
+            )}
+            {treatment
+              ? <ThicknessControl object={o} onChange={p => patch(o.id, p)} />
+              : field("Depth", o.size[2], (n) => size(2, n), 0.05, 10)}
+          </>
+        )}
+        {o.kind === "speaker" && (
+          <>
+            {field(
+              "Stand height",
+              o.stand.height,
+              (n) => {
+                const p = [...o.position] as Vec3;
+                p[1] = n;
+                patch(o.id, { stand: { ...o.stand, height: n }, position: p });
+              },
+              0,
+              r.height,
+            )}
+            {field(
+              "Tweeter above cabinet base",
+              o.tweeter,
+              (n) => patch(o.id, { tweeter: n }),
+              0,
+              o.size[1],
+            )}
+            <p className="hint">
+              Acoustic center: {distanceLabel(o.position[1] + o.tweeter, unit)}{" "}
+              above floor. Wall offsets locate the cabinet center.
+            </p>
+          </>
+        )}
+      </Section>
+      <Section title="Placement">
+        {treatment && (
+          <>
+            <label className="text-field">
+              Mounting surface
+              <select
+                aria-label="Mounting surface"
+                value={o.mount}
+                onChange={(e) =>
+                  patch(o.id, { mount: e.target.value as Wall | "free" })
+                }
+              >
+                <option value="free">Free placement</option>
+                {walls.map((w) => (
+                  <option key={w}>{w}</option>
+                ))}
+              </select>
+            </label>
+            {o.kind === "bass" && (
+              <label className="text-field">
+                Corner
+                <select
+                  aria-label="Corner"
+                  value={o.corner}
+                  onChange={(e) =>
+                    patch(o.id, {
+                      corner: e.target.value as RoomObject["corner"],
+                      mount: "front",
+                    })
+                  }
+                >
+                  {["front-left", "front-right", "rear-left", "rear-right"].map(
+                    (c) => (
+                      <option key={c}>{c}</option>
+                    ),
+                  )}
+                </select>
+              </label>
+            )}
+            {o.mount !== "free" && (
+              <>
+                {field(
+                  o.mount === "ceiling" || o.mount === "floor"
+                    ? "Offset from left edge"
+                    : "Lateral offset",
+                  o.offset,
+                  (offset) => patch(o.id, { offset }),
+                  0,
+                  Math.max(r.width, r.length),
+                )}
+                {o.mount === "ceiling" || o.mount === "floor"
+                  ? field(
+                      "Offset from front edge",
+                      o.ceilingOffset,
+                      (ceilingOffset) => patch(o.id, { ceilingOffset }),
+                      0,
+                      r.length,
+                    )
+                  : field(
+                      "Bottom edge above floor",
+                      o.bottom,
+                      (bottom) => patch(o.id, { bottom }),
+                      0,
+                      r.height,
+                    )}
+              </>
+            )}
+            <div className="button-pair">
+              <button
+                onClick={() =>
+                  patch(o.id, {
+                    size: [
+                      Math.min(o.size[0], o.size[1]),
+                      Math.max(o.size[0], o.size[1]),
+                      o.size[2],
+                    ],
+                  })
+                }
+              >
+                Vertical
+              </button>
+              <button
+                onClick={() =>
+                  patch(o.id, {
+                    size: [
+                      Math.max(o.size[0], o.size[1]),
+                      Math.min(o.size[0], o.size[1]),
+                      o.size[2],
+                    ],
+                  })
+                }
+              >
+                Horizontal
+              </button>
+            </div>
+          </>
+        )}
+        {(!treatment || o.mount === "free") && (
+          <>
+            {o.kind === "speaker" ? (
+              <>
+                <>
+                  {field(
+                    "From left wall",
+                    o.position[0],
+                    (n) => pos(0, n),
+                    0,
+                    r.width,
+                  )}
+                </>
+                {field(
+                  "From right wall",
+                  r.width - o.position[0],
+                  (n) => pos(0, r.width - n),
+                  0,
+                  r.width,
+                )}
+                <p className="hint">
+                  Set either wall distance. The opposite distance is calculated
+                  automatically.
+                </p>
+              </>
+            ) : (
+              <>
+                {field(
+                  o.kind === "listener" ? "X · from left wall" : "From left wall",
+                  o.position[0],
+                  (n) => pos(0, n),
+                  0,
+                  r.width,
+                )}
+                {o.kind !== "listener" && (
+                  <>
+                    {field(
+                      "From right wall",
+                      r.width - o.position[0],
+                      (n) => pos(0, r.width - n),
+                      0,
+                      r.width,
+                    )}
+                    <p className="hint">
+                      Set either wall distance. The opposite distance is
+                      calculated automatically.
+                    </p>
+                  </>
+                )}
+              </>
+            )}
+            {o.kind !== "speaker" &&
+              o.kind !== "sofa" &&
+              field(
+                o.kind === "listener" ? "Y · ear height" : "Y · above floor",
+                o.position[1],
+                (n) => pos(1, n),
+                0,
+                r.height,
+              )}
+            {field(
+              "Z · from front wall",
+              o.position[2],
+              (n) => pos(2, n),
+              0,
+              r.length,
+            )}
+            {(["X", "Y", "Z"] as const).map((axis, i) => (
+              <NumberField
+                key={axis}
+                label={`Rotate ${axis}`}
+                value={(o.rotation[i] * 180) / Math.PI}
+                min={-360}
+                max={360}
+                step={5}
+                suffix="°"
+                onChange={(n) => {
+                  const rotation = [...o.rotation] as Vec3;
+                  rotation[i] = (n * Math.PI) / 180;
+                  patch(o.id, { rotation });
+                }}
+              />
+            ))}
+          </>
+        )}
+        {treatment && (
+          <>
+            <label className="text-field">
+              Snap object to room surface
+              <select
+                aria-label="Snap object to room surface"
+                value=""
+                onChange={(e) => {
+                  if (e.target.value)
+                    patch(o.id, {
+                      position: snapToSurface(o, r, e.target.value as Wall),
+                      mount: e.target.value as Wall,
+                    });
+                }}
+              >
+                <option value="">Choose a surface…</option>
+                {walls.map((w) => (
+                  <option key={w}>{w}</option>
+                ))}
+              </select>
+            </label>
+            <p className="hint">
+              Mounted panels stay on their selected wall, floor, ceiling, or
+              corner. Choose Free placement when you need to edit them in space.
+            </p>
+          </>
+        )}
+      </Section>
+    </>
+  );
+}
+export function RoomEditor({ unit }: { unit: "ft" | "cm" }) {
+  const d = useStudio((s) => s.design),
+    commit = useStudio((s) => s.commit);
+  return (
+    <Section
+      title="Room dimensions"
+      extra={
+        <span className="badge">{unit === "ft" ? "FEET" : "CENTIMETERS"}</span>
+      }
+    >
+      <div className="room-dimensions-grid">
+        {(["length", "width", "height"] as const).map((k) => (
+          <NumberField
+            key={k}
+            label={k[0].toUpperCase() + k.slice(1)}
+            value={unit === "ft" ? toFeet(d.room[k]) : d.room[k] * 100}
+            min={unit === "ft" ? toFeet(1) : 100}
+            max={unit === "ft" ? toFeet(30) : 3000}
+            suffix={unit}
+            onChange={(v) => {
+              const room = { ...d.room, [k]: unit === "ft" ? ft(v) : v / 100 };
+              commit({
+                ...d,
+                room,
+                objects: d.objects.map((o) => mountObject(o, room)),
+              });
+            }}
+          />
+        ))}
+      </div>
+    </Section>
+  );
 }
 export function Keyboard({ onEscape }: { onEscape: () => void }) {
-  useEffect(() => { const key = (e: KeyboardEvent) => { if ((e.target as HTMLElement).closest('input,select,textarea')) return; const s = useStudio.getState(); if (e.key === 'Escape') { onEscape(); s.select(null) } if (e.key === 'Delete' || e.key === 'Backspace') { e.preventDefault(); s.remove() } if (e.metaKey || e.ctrlKey) { if (e.key.toLowerCase() === 'z') { e.preventDefault(); if (e.shiftKey) s.redo(); else s.undo() } if (e.key.toLowerCase() === 'd') { e.preventDefault(); s.duplicate() } if (e.key.toLowerCase() === 'y') { e.preventDefault(); s.redo() } } }; window.addEventListener('keydown', key); return () => window.removeEventListener('keydown', key) }, [onEscape]); return null
+  useEffect(() => {
+    const key = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement).closest("input,select,textarea")) return;
+      const s = useStudio.getState();
+      if (e.key === "Escape") {
+        onEscape();
+        s.select(null);
+      }
+      if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault();
+        s.remove();
+      }
+      if (e.metaKey || e.ctrlKey) {
+        if (e.key.toLowerCase() === "z") {
+          e.preventDefault();
+          if (e.shiftKey) s.redo();
+          else s.undo();
+        }
+        if (e.key.toLowerCase() === "d") {
+          e.preventDefault();
+          s.duplicate();
+        }
+        if (e.key.toLowerCase() === "y") {
+          e.preventDefault();
+          s.redo();
+        }
+      }
+    };
+    window.addEventListener("keydown", key);
+    return () => window.removeEventListener("keydown", key);
+  }, [onEscape]);
+  return null;
 }

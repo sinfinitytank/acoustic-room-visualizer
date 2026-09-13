@@ -1,22 +1,37 @@
 import { Euler, Vector3 } from 'three'
-import { blankDesign, makeObject, mountObject, validateDesign } from './model'
+import { blankDesign, makeObject, mountObject, unityAbsorption, validateDesign } from './model'
 import type { Design, Kind, RoomObject, Vec3 } from './model'
 export type LibraryItem = RoomObject & { kind: Exclude<Kind, 'listener'> }
 export type Snapshot = { design: Design; library: LibraryItem[] }
 export type Milestone = Snapshot & { id: string; label: string; createdAt: string; parentId: string | null }
 export type Workspace = Snapshot & { version: 2; milestones: Milestone[]; activeMilestoneId: string | null }
 export const WORKSPACE_KEY = 'acoustic-room-workspace-v2'
+function mergeLegacyStand(w: Workspace): Workspace {
+  const stands = new Map(w.library.filter(item => item.kind === 'stand').map(item => [item.id, item]))
+  const library = w.library.filter(item => item.kind !== 'stand')
+  const design = { ...w.design, objects: w.design.objects.map(object => {
+    if (object.kind !== 'speaker' || !object.standTemplateId) return object
+    const legacy = stands.get(object.standTemplateId)
+    return legacy ? { ...object, stand: { height: legacy.size[1], width: legacy.size[0], depth: legacy.size[2], postWidth: legacy.stand.postWidth || object.stand.postWidth }, standTemplateId: undefined } : { ...object, standTemplateId: undefined }
+  }) }
+  return { ...w, design, library }
+}
 export function defaultLibrary(): LibraryItem[] {
   return (['panel', 'bass', 'speaker', 'stand', 'sofa'] as const).map(kind => {
     const base = makeObject(kind, `library-${kind}`)
-    return { ...base, kind, ...(kind === 'bass' ? { size: [0.85, 1.8, 0.15] as Vec3 } : {}), ...(kind === 'speaker' ? { standTemplateId: 'library-stand' } : {}) }
+    return { ...base, kind, absorption: unityAbsorption(), ...(kind === 'bass' ? { size: [0.85, 1.8, 0.15] as Vec3 } : {}), ...(kind === 'speaker' ? { standTemplateId: 'library-stand' } : {}) }
   })
 }
 export function syncSofaListeners(design: Design): Design {
   const firstSofa = design.objects.find(o => o.kind === 'sofa')
   const legacyListeners = design.objects.filter(o => o.kind === 'listener' && !o.parentSofaId).slice(0, 2)
   const adoptLegacy = firstSofa && !design.objects.some(o => o.parentSofaId === firstSofa.id)
-  const objects = design.objects.map(o => adoptLegacy && legacyListeners.includes(o) ? { ...o, parentSofaId: firstSofa.id, seat: legacyListeners.indexOf(o) as 0 | 1 } : o)
+  const objects = design.objects.map(o => {
+    const adopted = adoptLegacy && legacyListeners.includes(o) ? { ...o, parentSofaId: firstSofa.id, seat: legacyListeners.indexOf(o) as 0 | 1 } : o
+    if (adopted.kind === 'sofa') return { ...adopted, position: [adopted.position[0], 0, adopted.position[2]] as Vec3 }
+    if (adopted.kind === 'speaker') return { ...adopted, position: [adopted.position[0], Math.min(design.room.height, Math.max(0, adopted.stand.height)), adopted.position[2]] as Vec3 }
+    return adopted
+  })
   for (const sofa of objects.filter(o => o.kind === 'sofa')) {
     for (const seat of [0, 1] as const) {
       const index = objects.findIndex(o => o.parentSofaId === sofa.id && o.seat === seat)
@@ -39,20 +54,19 @@ export function instantiate(item: LibraryItem, d: Design, library: LibraryItem[]
   o.position = [r.width / 2, Math.min(r.height / 2, 1.3), r.length / 2]
   o.rotation = [0, 0, 0]; o.mount = 'free'
   if (item.kind === 'speaker') {
-    const stand = library.find(q => q.id === item.standTemplateId && q.kind === 'stand')
-    if (stand) o.stand = { height: stand.size[1], width: stand.size[0], depth: stand.size[2], postWidth: stand.stand.postWidth || 0.065 }
+    const legacyStand = item.standTemplateId ? library.find(q => q.id === item.standTemplateId && q.kind === 'stand') : undefined
+    o.stand = legacyStand ? { height: legacyStand.size[1], width: legacyStand.size[0], depth: legacyStand.size[2], postWidth: legacyStand.stand.postWidth || 0.065 } : { ...item.stand, height: Math.max(0, item.stand.height), width: item.stand.width || item.size[0] * 1.4, depth: item.stand.depth || item.size[2] * 1.2, postWidth: item.stand.postWidth || 0.065 }
     o.position = [r.width * (count % 2 ? 0.75 : 0.25), o.stand.height, r.length * 0.18]
     o.name = count < 2 ? `${count ? 'Right' : 'Left'} speaker` : `${item.name} ${count + 1}`
   }
   if (item.kind === 'sofa') o.position = [r.width / 2, 0, r.length * 0.68]
-  if (item.kind === 'stand') o.position = [r.width / 2, 0, r.length * 0.35]
   if (item.kind === 'bass') { o.mount = 'front'; o.corner = count % 2 ? 'front-right' : 'front-left'; o.bottom = 0.05; return mountObject(o, r) }
   return o
 }
 export function validateLibrary(value: unknown): LibraryItem[] {
   if (!Array.isArray(value) || value.length > 150) throw new Error('Invalid library: expected up to 150 reusable types.')
   const d = validateDesign({ ...blankDesign(), objects: value })
-  if (d.objects.some(o => o.kind === 'listener' || o.parentSofaId)) throw new Error('Library types must be panels, traps, speakers, stands or sofas.')
+  if (d.objects.some(o => o.kind === 'listener' || o.parentSofaId)) throw new Error('Library types must be panels, traps, speakers or sofas.')
   return d.objects as LibraryItem[]
 }
 export function validateWorkspace(value: unknown): Workspace {
@@ -73,7 +87,7 @@ export function initialWorkspace(): Workspace {
   const base: Workspace = { version: 2, design: blankDesign(), library, milestones: [], activeMilestoneId: null }
   try {
     const current = localStorage.getItem(WORKSPACE_KEY)
-    if (current) return validateWorkspace(JSON.parse(current))
+    if (current) return mergeLegacyStand(validateWorkspace(JSON.parse(current)))
     // Preserve previous-version progress as a recoverable milestone while the
     // revised planner starts with the blank room requested by the user.
     for (const [key, label] of [['acoustic-room-visualizer-v1', 'Previous workspace'], ['acoustic-room-manual-save', 'Previous manual save']]) {
