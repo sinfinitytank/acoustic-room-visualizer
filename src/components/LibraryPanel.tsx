@@ -1,15 +1,16 @@
+import type { LengthUnit } from '../domain/model';
 import Icon from './Icon'
 import ThicknessControl from './ThicknessControl'
 import AbsorptionGraph from './AbsorptionGraph'
 import { useEffect, useState } from 'react'
-import { absorptionForCurve, bands, curveForThickness, defaultCurve, distanceLabel, ft, makeObject, toFeet } from '../domain/model'
+import { absorptionForCurve, bands, curveForThickness, defaultCurve, distanceLabel, inches, makeObject, toUnit, fromUnit } from '../domain/model'
 import type { Vec3 } from '../domain/model'
 import { interpolateCurve } from '../domain/acoustics'
 import type { LibraryItem } from '../domain/workspace'
 import { validateLibrary } from '../domain/workspace'
 import { useStudio } from '../domain/store'
 import { NumberField, Section } from './Controls'
-export default function LibraryPanel({ unit, onPlace, onMessage }: { unit: 'ft' | 'cm'; onPlace: (id: string) => void; onMessage: (message: string) => void }) {
+export default function LibraryPanel({ unit, onPlace, onMessage }: { unit: LengthUnit; onPlace: (id: string) => void; onMessage: (message: string) => void }) {
   const library = useStudio(s => s.library), saveItem = useStudio(s => s.saveLibraryItem), deleteItem = useStudio(s => s.deleteLibraryItem)
   const [draft, setDraft] = useState<LibraryItem | null>(null), [creating, setCreating] = useState(false), [apply, setApply] = useState(false)
   const draftId = draft?.id
@@ -17,10 +18,10 @@ export default function LibraryPanel({ unit, onPlace, onMessage }: { unit: 'ft' 
   const edit = (item: LibraryItem) => { setDraft(structuredClone(item)); setCreating(false); setApply(false) }
   const start = (kind: LibraryItem['kind'] = 'panel') => { setDraft({ ...makeObject(kind), kind }); setCreating(true); setApply(false) }
   const update = (p: Partial<LibraryItem>) => setDraft(d => d ? { ...d, ...p } : null)
-  const display = unit === 'ft' ? toFeet : (n: number) => n * 100
-  const convert = unit === 'ft' ? ft : (n: number) => n / 100
+  const display = (n: number) => toUnit(n, unit)
+  const convert = (n: number) => fromUnit(n, unit)
   const dim = (label: string, i: number) => draft && <NumberField label={label} value={display(draft.size[i])} min={display(0.015)} max={display(9)} suffix={unit} onChange={n => { const size = [...draft.size] as Vec3; size[i] = convert(n); if ((draft.kind === 'panel' || draft.kind === 'bass') && i === 2) { const nextCurve = curveForThickness(size[i]); update({ size, curve: nextCurve, absorption: absorptionForCurve(nextCurve) }) } else update({ size }) }} />
-  const locked = !!draft && draft.thicknessMode !== "custom" && [2,4,6].some(n=>Math.abs(draft.size[2]-n*.0254)<1e-6)
+  const locked = !!draft && draft.thicknessMode !== "custom" && [2,4,6].some(n=>Math.abs(draft.size[2]-inches(n))<1e-6)
   const curve = draft?.curve?.length ? draft.curve : defaultCurve()
   const nrc = draft ? (['250', '500', '1000', '2000'] as const).reduce((sum, frequency) => sum + interpolateCurve(curve, +frequency, 1), 0) / 4 : 1
   const itemNrc = (item: LibraryItem) => item.curve?.length ? (['250', '500', '1000', '2000'] as const).reduce((sum, frequency) => sum + interpolateCurve(item.curve, +frequency, 1), 0) / 4 : (item.absorption['250'] + item.absorption['500'] + item.absorption['1000'] + item.absorption['2000']) / 4

@@ -126,6 +126,27 @@ export function treatmentSurface(o: RoomObject): Surface {
     absorption: o.absorption,
   };
 }
+/** Test the finite footprint of an attached panel along the wall normal.
+ * Mount metadata alone is insufficient after transforms or imported geometry.
+ */
+export function panelCoversReflection(panel: RoomObject, wall: Surface, point: Vec3): boolean {
+  if (panel.mount !== wall.id) return false;
+  const plane = treatmentSurface(panel);
+  const normalDot = dot(plane.normal, wall.normal);
+  if (Math.abs(normalDot) < 1e-8) return false;
+  const depth = dot(sub(plane.center, wall.center), wall.normal);
+  const extent = Math.abs(dot(plane.u, wall.normal)) * plane.halfU
+    + Math.abs(dot(plane.v, wall.normal)) * plane.halfV
+    + Math.abs(normalDot) * panel.size[2] / 2;
+  // Mounted boxes have an 8 mm backing gap. Reject detached or penetrating boxes.
+  if (depth - extent < -1e-5 || depth - extent > 0.008 + 1e-5) return false;
+  if (Math.abs(dot(sub(point, wall.center), wall.normal)) > 1e-5) return false;
+  const projected = add(point, scale(wall.normal, dot(sub(plane.center, point), plane.normal) / normalDot));
+  const local = sub(projected, plane.center);
+  return Math.abs(dot(local, plane.u)) <= plane.halfU + 1e-5
+    && Math.abs(dot(local, plane.v)) <= plane.halfV + 1e-5;
+}
+
 export const inside = (p: Vec3, r: Room) =>
   p.every((v, i) => v >= -1e-5 && v <= [r.width, r.height, r.length][i] + 1e-5);
 export function solvePath(
@@ -159,6 +180,7 @@ export function solvePath(
 }
 export type RaySettings = {
   enabled: boolean;
+  direct?: boolean;
   first: boolean;
   second: boolean;
   listener: string;
@@ -227,14 +249,14 @@ export function computePaths(
     (o) =>
       (o.kind === "panel" || o.kind === "bass") && o.visible && layers[o.kind],
   );
-  // A treatment that is switched off in Rays is not part of the acoustic
-  // scene at all: it must neither reflect nor occlude a wall path.
-  const blockers = treatments
-    .filter((o) => o.reflect)
-    .map(treatmentSurface);
+  // Mounted panels coat the room plane: their thickness must not move or
+  // replace its reflection points. Free panels and diagonal traps retain
+  // their geometric planes; the treatment switch changes absorption only.
+  const coatings = treatments.filter(o => o.kind === "panel" && o.mount !== "free");
+  const blockers = treatments.filter(o => !coatings.includes(o)).map(treatmentSurface);
   const surfaces = [
     ...roomSurfaces(d.room).filter((s) => settings.surfaces[s.id as Wall]),
-    ...treatments.filter((o) => o.reflect).map(treatmentSurface),
+    ...blockers,
   ];
   const output: ReflectionPath[] = [];
   for (const speaker of d.objects.filter(
@@ -247,7 +269,7 @@ export function computePaths(
           .applyEuler(new Euler(...speaker.rotation))
           .toArray() as Vec3,
       );
-      output.push({
+      if (settings.direct !== false) output.push({
         id: `${speaker.id}:direct:${listener.id}`,
         source: speaker.name,
         listener: listener.name,
@@ -259,14 +281,17 @@ export function computePaths(
         color: speakerRayColor(speaker, d.room),
       });
       let secondCount = 0;
-      const retained = (surface: Surface) =>
-        interpolateCurve(
-          surface.objectId
-            ? d.objects.find((o) => o.id === surface.objectId)?.curve
-            : undefined,
-          settings.frequency || Number(settings.band),
-          surface.absorption?.[settings.band] || 0,
-        );
+      const absorption = (object: RoomObject) => object.reflect
+        ? interpolateCurve(object.curve, settings.frequency || Number(settings.band), object.absorption[settings.band])
+        : 0;
+      const coveringTreatments = (surface: Surface, point: Vec3) => {
+        if (surface.objectId) return treatments.filter(o => o.id === surface.objectId && o.reflect);
+        return coatings.filter(panel => {
+          return panel.reflect && panelCoversReflection(panel, surface, point);
+        });
+      };
+      const retained = (surface: Surface, point: Vec3) =>
+        coveringTreatments(surface, point).reduce((value, panel) => Math.max(value, absorption(panel)), 0);
       const tryPath = (seq: Surface[]) => {
         if (
           seq.length === 2 &&
@@ -291,7 +316,7 @@ export function computePaths(
           const outgoing = sub(points[i + 2], points[i + 1]);
           const incidence = reflectionCosine(incoming, outgoing, seq[i].normal);
           // Grazing incidence presents less absorbing area to the wave.
-          const reflected = Math.max(0, 1 - retained(seq[i]) * incidence);
+          const reflected = Math.max(0, 1 - retained(seq[i], points[i + 1]) * incidence);
           segmentEnergies.push(segmentEnergies[i] * reflected);
         }
         const energy = segmentEnergies.at(-1)!;
@@ -307,6 +332,7 @@ export function computePaths(
             .reduce((n, p, i) => n + distance(p, points[i]), 0),
           energy,
           segmentEnergies,
+          reflectionCoverage: seq.map((surface, i) => coveringTreatments(surface, points[i + 1]).length > 0),
           color: speakerRayColor(speaker, d.room),
         });
         if (seq.length === 2) secondCount++;
@@ -370,4 +396,61 @@ export function rayStatus(d: Design, s: RaySettings, count: number): string {
   if (count === 0)
     return "No valid paths. Check surface toggles and keep speakers and their tweeters inside the room.";
   return `${count} valid reflection paths to ${destination}.`;
+}
+
+// Rigid rectangular-room eigenmodes. Orders follow the UI's length/width/height
+// convention; geometry remains X = width, Y = height, Z = length.
+export type RoomModeKind = 'Axial' | 'Tangential' | 'Oblique';
+export type RoomMode = {
+  id: string;
+  orders: [number, number, number];
+  frequency: number;
+  kind: RoomModeKind;
+};
+export const MODE_SOUND_SPEED = 343;
+export function calculateRoomModes(room: Room, maximum = 300): RoomMode[] {
+  if (![room.length, room.width, room.height].every(n => Number.isFinite(n) && n >= 1 && n <= 30)
+    || !Number.isFinite(maximum) || maximum <= 0 || maximum > 300) return [];
+  const dimensions = [room.length, room.width, room.height];
+  const limits = dimensions.map(d => Math.floor(2 * maximum * d / MODE_SOUND_SPEED));
+  const modes: RoomMode[] = [];
+  for (let l = 0; l <= limits[0]; l++) for (let w = 0; w <= limits[1]; w++) for (let h = 0; h <= limits[2]; h++) {
+    const axes = Number(l > 0) + Number(w > 0) + Number(h > 0);
+    if (!axes) continue;
+    const frequency = MODE_SOUND_SPEED / 2 * Math.hypot(l / room.length, w / room.width, h / room.height);
+    if (frequency > maximum + 1e-9) continue;
+    modes.push({ id: `${l}-${w}-${h}`, orders: [l, w, h], frequency, kind: axes === 1 ? 'Axial' : axes === 2 ? 'Tangential' : 'Oblique' });
+  }
+  // Keep coincident modes: each has its own spatial pattern.
+  return modes.sort((a, b) => a.frequency - b.frequency || a.orders[0] - b.orders[0] || a.orders[1] - b.orders[1] || a.orders[2] - b.orders[2]);
+}
+export function roomModePressure(room: Room, mode: RoomMode, point: Vec3): number {
+  const [l, w, h] = mode.orders;
+  return Math.cos(Math.PI * l * point[2] / room.length)
+    * Math.cos(Math.PI * w * point[0] / room.width)
+    * Math.cos(Math.PI * h * point[1] / room.height);
+}
+export function schroederFrequency(room: Room, rt60: number): number {
+  const volume = room.length * room.width * room.height;
+  return Number.isFinite(volume) && volume > 0 && Number.isFinite(rt60) && rt60 >= 0
+    ? 2000 * Math.sqrt(rt60 / volume) : 0;
+}
+export function nearestRoomMode(modes: RoomMode[], frequency: number): RoomMode | undefined {
+  let lo = 0, hi = modes.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >>> 1;
+    if (modes[mid].frequency < frequency) lo = mid + 1;
+    else hi = mid;
+  }
+  if (!lo) return modes[0];
+  if (lo === modes.length) return modes[lo - 1];
+  return frequency - modes[lo - 1].frequency < modes[lo].frequency - frequency ? modes[lo - 1] : modes[lo];
+}
+
+export type RayCoverageFilter = 'all' | 'treated' | 'untreated';
+export function matchesRayCoverage(path: ReflectionPath, filter: RayCoverageFilter): boolean {
+  if (filter === 'all') return true;
+  if (!path.reflectionCoverage?.length) return false;
+  const treated = path.reflectionCoverage.some(Boolean);
+  return filter === 'treated' ? treated : !treated;
 }

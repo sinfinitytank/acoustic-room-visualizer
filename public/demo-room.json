@@ -2,9 +2,9 @@
   "version": 1,
   "name": "The listening room",
   "room": {
-    "width": 4.8768,
-    "length": 6.096,
-    "height": 2.7432000000000003
+    "width": 4.8,
+    "length": 6,
+    "height": 2.7
   },
   "objects": [
     {

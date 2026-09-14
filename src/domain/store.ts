@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { demo, makeObject, mountObject } from './model'
 import type { Design, Kind, RoomObject, Vec3 } from './model'
-import { initialWorkspace, instantiate, syncSofaListeners, WORKSPACE_KEY } from './workspace'
+import { initialWorkspace, validateLibrary, instantiate, syncSofaListeners, WORKSPACE_KEY } from './workspace'
 import type { LibraryItem, Snapshot, Workspace } from './workspace'
 interface Store extends Workspace {
   past: Snapshot[]; future: Snapshot[]; selected: string | null; dragStart: Snapshot | null; storageError: boolean;
@@ -11,6 +11,7 @@ interface Store extends Workspace {
   add: (kind: Kind) => string; place: (id: string) => string | null;
   saveLibraryItem: (item: LibraryItem, apply?: boolean) => void; deleteLibraryItem: (id: string) => void;
   saveMilestone: (label?: string) => boolean; restoreMilestone: (id: string) => boolean; deleteMilestone: (id: string) => boolean; deleteAllMilestones: () => boolean;
+  importLibrary: (value: unknown) => void;
   importWorkspace: (w: Workspace) => void; persist: () => void;
   remove: () => void; duplicate: () => void; resetObject: () => void; undo: () => void; redo: () => void;
 }
@@ -35,6 +36,12 @@ export const useStudio = create<Store>((set, get) => ({ ...initialWorkspace(), p
       return mountObject({ ...o, size: [...item.size] as Vec3, absorption: { ...item.absorption }, curve: item.curve ? structuredClone(item.curve) : o.curve, color: item.color, stand: defaults.stand, tweeter: item.tweeter, ...(o.kind === 'speaker' ? { position: [o.position[0], defaults.stand.height, o.position[2]] as Vec3 } : {}) }, design.room)
     }) });
     set({ design, library, past: [...s.past.slice(-49), snapshot(s)], future: [] }); get().persist()
+  },
+  importLibrary: value => {
+    const library = validateLibrary(value), s = get();
+    if (!s.saveMilestone('Before library import')) throw new Error('Unable to checkpoint current progress. Export a backup before importing.');
+    set({ library, past: [...s.past.slice(-49), snapshot(s)], future: [] });
+    get().persist();
   },
   deleteLibraryItem: id => { const s = get(); set({ library: s.library.filter(q => q.id !== id).map(q => q.standTemplateId === id ? { ...q, standTemplateId: undefined } : q), past: [...s.past.slice(-49), snapshot(s)], future: [] }); get().persist() },
   saveMilestone: label => { const s = get(); const m = { ...structuredClone(snapshot(s)), id: crypto.randomUUID(), label: label?.trim().slice(0, 100) || `Save ${s.milestones.length + 1}`, createdAt: new Date().toISOString(), parentId: s.activeMilestoneId }; const next = { ...s, milestones: [...s.milestones, m], activeMilestoneId: m.id }; if (write(next)) { set({ storageError: true }); return false } set({ milestones: next.milestones, activeMilestoneId: m.id, storageError: false }); return true },

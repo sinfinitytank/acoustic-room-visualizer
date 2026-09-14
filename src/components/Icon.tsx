@@ -13,6 +13,7 @@ const paths: Record<string,string> = {
  hidden:'M3 3l18 18 M9 5c7-2 13 7 13 7l-3 4 M15 19C8 21 2 12 2 12l3-4',
  Design:'M3 10 12 3l9 7v11H3Z M9 21v-8h6v8',
  Library:'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',
+ Mode:'M2 12c3-14 7-14 10 0s7 14 10 0 M2 12h20',
  Rays:'M3 18 9 5l6 14 6-13 M3 18h18',
  Measure:'M3 8h18v8H3z M7 8v4 M11 8v3 M15 8v4 M19 8v3',
  Saves:'M3 11a9 9 0 1 1 2 7 M3 5v6h6 M12 7v5l3 2',

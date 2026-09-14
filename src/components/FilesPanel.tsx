@@ -2,7 +2,7 @@ import Icon from './Icon';
 import { useRef } from "react";
 import type { ChangeEvent } from "react";
 import { blankDesign, validateDesign } from "../domain/model";
-import { validateLibrary, validateWorkspace } from "../domain/workspace";
+import { exportLibrary, parseLibraryFile, validateLibrary, validateWorkspace } from "../domain/workspace";
 import { useStudio, workspaceData } from "../domain/store";
 import { Section } from "./Controls";
 
@@ -59,6 +59,7 @@ export default function FilesPanel({
   onMessage: (m: string) => void;
   onHistory: () => void;
 }) {
+  const libraryInput = useRef<HTMLInputElement>(null);
   const input = useRef<HTMLInputElement>(null);
   const loadDemo = async () => {
     try {
@@ -78,6 +79,18 @@ export default function FilesPanel({
           : "Demo room could not be loaded.",
       );
     }
+  };
+  const handleLibraryFile = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    try {
+      if (file.size > 20_000_000) throw new Error('File is too large. Maximum size is 20 MB.');
+      useStudio.getState().importLibrary(parseLibraryFile(JSON.parse(await file.text())));
+      onMessage('Library restored. Placed objects are unchanged; Undo restores the previous library.');
+    } catch (error) {
+      onMessage(error instanceof SyntaxError ? 'This file is not valid JSON. Your library is unchanged.' : error instanceof Error ? error.message : 'Library import failed.');
+    }
+    event.target.value = '';
   };
   const handleFile = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -177,6 +190,16 @@ export default function FilesPanel({
         <p className="hint">
           Changes autosave in this browser. Export a workspace backup to keep a portable copy.
         </p>
+      </Section>
+      <Section title="Library JSON">
+        <div className="file-actions">
+          <button onClick={() => libraryInput.current?.click()}><Icon name="Files"/><span>Library Import<small>Replace reusable types from a library JSON file</small></span></button>
+          <button onClick={() => {
+            downloadJson(exportLibrary(useStudio.getState().library), 'acoustic-room-library.json');
+            onMessage('Reusable library exported.');
+          }}><Icon name="Files"/><span>Library Export<small>Back up all reusable types and their settings</small></span></button>
+        </div>
+        <input ref={libraryInput} type="file" className="hidden-input" aria-label="Import library file" accept=".json,application/json" onChange={handleLibraryFile}/>
       </Section>
       <details className="model-details"><summary>About reflection output</summary>
         <p className="hint">

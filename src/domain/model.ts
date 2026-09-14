@@ -19,11 +19,20 @@ export type Anchor = { point: Vec3; objectId?: string }
 export type Measurement = { id: string; a: Anchor; b: Anchor }
 export type Design = { version: 1; name: string; room: Room; objects: RoomObject[]; measurements: Measurement[] }
 export type Surface = { id: string; name: string; center: Vec3; normal: Vec3; u: Vec3; v: Vec3; halfU: number; halfV: number; absorption?: Coefficients; objectId?: string }
-export type ReflectionPath = { id: string; source: string; listener: string; order: 1 | 2; points: Vec3[]; surfaces: string[]; length: number; energy: number; segmentEnergies?: number[]; color: string }
-export const ft = (value: number) => value * 0.3048
-export const toFeet = (value: number) => value / 0.3048
-export const inches = (value: number) => value * 0.0254
-export const distanceLabel = (value: number, unit: 'ft' | 'cm' = 'ft') => { if (unit === 'cm') return `${(value * 100).toFixed(1)} cm`; const total = Math.round(value / 0.0254); return `${Math.floor(total / 12)}′ ${total % 12}″` }
+export type ReflectionPath = { id: string; source: string; listener: string; order: 1 | 2; points: Vec3[]; surfaces: string[]; length: number; energy: number; segmentEnergies?: number[]; reflectionCoverage?: boolean[]; color: string }
+export type LengthUnit = 'ft' | 'cm' | 'in'
+const metresPerFoot = 0.3
+const metresPerUnit: Record<LengthUnit, number> = { ft: metresPerFoot, cm: 0.01, in: metresPerFoot / 12 }
+export const fromUnit = (value: number, unit: LengthUnit) => value * metresPerUnit[unit]
+export const toUnit = (value: number, unit: LengthUnit) => value / metresPerUnit[unit]
+export const ft = (value: number) => fromUnit(value, 'ft')
+export const toFeet = (value: number) => toUnit(value, 'ft')
+export const inches = (value: number) => fromUnit(value, 'in')
+export const distanceLabel = (value: number, unit: LengthUnit = 'ft') => {
+  if (unit !== 'ft') return `${toUnit(value, unit).toFixed(1)} ${unit}`
+  const total = Math.round(toUnit(value, 'in'))
+  return `${Math.floor(total / 12)}′ ${total % 12}″`
+}
 export const unityAbsorption = (): Coefficients => ({ '125': 1, '250': 1, '500': 1, '1000': 1, '2000': 1, '4000': 1 })
 const chartCurves: Record<2 | 4 | 6, AbsorptionPoint[]> = {
   2: [
@@ -49,8 +58,8 @@ const chartCurves: Record<2 | 4 | 6, AbsorptionPoint[]> = {
   ],
 }
 export const curveForThickness = (thickness: number): AbsorptionPoint[] => {
-  const inches = thickness / 0.0254
-  const preset = inches < 3 ? 2 : inches < 5 ? 4 : 6
+  const inchCount = toUnit(thickness, 'in')
+  const preset = inchCount < 3 ? 2 : inchCount < 5 ? 4 : 6
   return chartCurves[preset].map(point => ({ ...point }))
 }
 export const absorptionForCurve = (curve: AbsorptionPoint[]): Coefficients => {
@@ -68,9 +77,9 @@ export const absorptionForCurve = (curve: AbsorptionPoint[]): Coefficients => {
   }
   return Object.fromEntries(bands.map(band => [band, Math.min(1, Math.max(0, value(+band)))])) as Coefficients
 }
-export const defaultCurve = (): AbsorptionPoint[] => curveForThickness(0.1016)
+export const defaultCurve = (): AbsorptionPoint[] => curveForThickness(inches(4))
 export const presets: Record<string, Coefficients> = { Broadband: { '125': 0.25, '250': 0.65, '500': 0.85, '1000': 0.95, '2000': 0.95, '4000': 0.9 }, 'Thick mineral wool': { '125': 0.5, '250': 0.85, '500': 0.95, '1000': 0.95, '2000': 0.95, '4000': 0.95 }, 'Light fabric': { '125': 0.05, '250': 0.1, '500': 0.2, '1000': 0.35, '2000': 0.45, '4000': 0.5 } }
-export function makeObject(kind: Kind, id: string = crypto.randomUUID()): RoomObject { const thickness = kind === 'bass' ? 0.1524 : 0.1016; const curve = curveForThickness(thickness); return { id, kind, name: kind === 'bass' ? 'Corner bass trap' : kind === 'panel' ? 'Absorption panel' : kind === 'listener' ? 'Listener' : kind === 'speaker' ? 'Speaker' : kind === 'stand' ? 'Speaker stand' : 'Sofa', position: [2, 1.3, 2], rotation: [0, 0, 0], size: kind === 'stand' ? [0.34, 0.65, 0.38] : kind === 'speaker' ? [0.24, 0.4, 0.31] : kind === 'sofa' ? [2, 0.82, 0.85] : kind === 'listener' ? [0.2, 0.2, 0.2] : [0.61, 1.22, thickness], visible: true, reflect: true, color: kind === 'speaker' ? '#bc9871' : kind === 'sofa' ? '#68766e' : kind === 'listener' ? '#e5b66c' : kind === 'stand' ? '#626c73' : kind === 'bass' ? '#a79478' : '#758b80', stand: { height: 0.65, width: 0.34, depth: 0.38, postWidth: 0.065 }, tweeter: 0.3, mount: 'free', corner: 'front-left', offset: 1, bottom: 0.7, ceilingOffset: 1, absorption: absorptionForCurve(curve), curve, placed: false } }
+export function makeObject(kind: Kind, id: string = crypto.randomUUID()): RoomObject { const thickness = inches(kind === 'bass' ? 6 : 4); const curve = curveForThickness(thickness); return { id, kind, name: kind === 'bass' ? 'Corner bass trap' : kind === 'panel' ? 'Absorption panel' : kind === 'listener' ? 'Listener' : kind === 'speaker' ? 'Speaker' : kind === 'stand' ? 'Speaker stand' : 'Sofa', position: [2, 1.3, 2], rotation: [0, 0, 0], size: kind === 'stand' ? [0.34, 0.65, 0.38] : kind === 'speaker' ? [0.24, 0.4, 0.31] : kind === 'sofa' ? [2, 0.82, 0.85] : kind === 'listener' ? [0.2, 0.2, 0.2] : [0.61, 1.22, thickness], visible: true, reflect: true, color: kind === 'speaker' ? '#bc9871' : kind === 'sofa' ? '#68766e' : kind === 'listener' ? '#e5b66c' : kind === 'stand' ? '#626c73' : kind === 'bass' ? '#a79478' : '#758b80', stand: { height: 0.65, width: 0.34, depth: 0.38, postWidth: 0.065 }, tweeter: 0.3, mount: 'free', corner: 'front-left', offset: 1, bottom: 0.7, ceilingOffset: 1, absorption: absorptionForCurve(curve), curve, placed: false } }
 export function mountObject(o: RoomObject, r: Room): RoomObject {
   if (o.kind !== 'panel' && o.kind !== 'bass') return o
   const [w, h, t] = o.size

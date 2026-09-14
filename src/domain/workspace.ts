@@ -97,3 +97,12 @@ export function initialWorkspace(): Workspace {
   } catch { /* The app remains usable without browser storage. */ }
   return base
 }
+
+export function exportLibrary(library: LibraryItem[]) {
+  return { format: 'acoustic-room-library', version: 1, library: validateLibrary(library) };
+}
+export function parseLibraryFile(value: unknown): LibraryItem[] {
+  if (!value || typeof value !== 'object' || !('format' in value) || value.format !== 'acoustic-room-library' || !('version' in value) || value.version !== 1 || !('library' in value))
+    throw new Error('Invalid library file. Choose an Acoustic Room Visualizer library JSON export.');
+  return validateLibrary(value.library);
+}

@@ -1,7 +1,8 @@
+import type { LengthUnit } from '../domain/model';
 import ThicknessControl from './ThicknessControl';
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
-import { distanceLabel, mountObject, toFeet, ft, walls } from "../domain/model";
+import { distanceLabel, mountObject, toUnit, fromUnit, walls } from "../domain/model";
 import type { RoomObject, Vec3, Wall } from "../domain/model";
 import { useStudio } from "../domain/store";
 import { snapToSurface } from "../domain/placement";
@@ -96,13 +97,13 @@ export function ObjectEditor({
   unit,
 }: {
   o: RoomObject;
-  unit: "ft" | "cm";
+  unit: LengthUnit;
 }) {
   const patch = useStudio((s) => s.patch),
     r = useStudio((s) => s.design.room);
   const treatment = o.kind === "panel" || o.kind === "bass";
-  const display = unit === "ft" ? toFeet : (n: number) => n * 100,
-    convert = unit === "ft" ? ft : (n: number) => n / 100;
+  const display = (n: number) => toUnit(n, unit),
+    convert = (n: number) => fromUnit(n, unit);
   const field = (
     label: string,
     value: number,
@@ -454,14 +455,14 @@ export function ObjectEditor({
     </>
   );
 }
-export function RoomEditor({ unit }: { unit: "ft" | "cm" }) {
+export function RoomEditor({ unit }: { unit: LengthUnit }) {
   const d = useStudio((s) => s.design),
     commit = useStudio((s) => s.commit);
   return (
     <Section
       title="Room dimensions"
       extra={
-        <span className="badge">{unit === "ft" ? "FEET" : "CENTIMETERS"}</span>
+        <span className="badge">{unit === "ft" ? "FEET" : unit === "in" ? "INCHES" : "CENTIMETERS"}</span>
       }
     >
       <div className="room-dimensions-grid">
@@ -469,12 +470,12 @@ export function RoomEditor({ unit }: { unit: "ft" | "cm" }) {
           <NumberField
             key={k}
             label={k[0].toUpperCase() + k.slice(1)}
-            value={unit === "ft" ? toFeet(d.room[k]) : d.room[k] * 100}
-            min={unit === "ft" ? toFeet(1) : 100}
-            max={unit === "ft" ? toFeet(30) : 3000}
+            value={toUnit(d.room[k], unit)}
+            min={toUnit(1, unit)}
+            max={toUnit(30, unit)}
             suffix={unit}
             onChange={(v) => {
-              const room = { ...d.room, [k]: unit === "ft" ? ft(v) : v / 100 };
+              const room = { ...d.room, [k]: fromUnit(v, unit) };
               commit({
                 ...d,
                 room,
