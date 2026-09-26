@@ -63,7 +63,7 @@ export default function FilesPanel({
   const input = useRef<HTMLInputElement>(null);
   const loadDemo = async () => {
     try {
-      const response = await fetch("/demo-room.json");
+      const response = await fetch(`${import.meta.env.BASE_URL}demo-room.json`);
       if (!response.ok) throw new Error("Demo room file is unavailable.");
       const imported = await response.json();
       // Keep the downloadable legacy demo usable while ensuring a fresh demo
@@ -126,7 +126,7 @@ export default function FilesPanel({
           </button>
           <a
             className="demo-download"
-            href="/demo-room.json"
+            href={`${import.meta.env.BASE_URL}demo-room.json`}
             download="acoustic-room-demo.json"
           >
             Download JSON
