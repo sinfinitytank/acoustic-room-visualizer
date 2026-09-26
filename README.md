@@ -15,6 +15,10 @@ npm run dev -- --host 127.0.0.1
 
 Open http://127.0.0.1:5173. If that port is in use, use the URL Vite prints. Production preview: `npm run build` then `npm run preview -- --host 127.0.0.1`.
 
+## GitHub Pages
+
+The repository includes a GitHub Actions deployment workflow for GitHub Pages. In the repository’s **Settings → Pages**, select **GitHub Actions** as the source. Pushes to the `v1.2` branch then build and publish the static app at `https://sinfinitytank.github.io/acoustic-room-visualizer/`. Local development continues to use the root URL.
+
 ## Start with a blank room
 
 A new workspace has no objects, with axes and measurements off. Add your room dimensions in Design, then open Library. Your working room resumes on reload. Existing version 1 autosaves and manual saves are preserved as milestones named “Previous workspace” and “Previous manual save”; the first launch of the revised workspace starts blank. Use Files → New blank room to start over; the previous room is checkpointed first.
@@ -113,7 +117,7 @@ The active workspace uses `acoustic-room-workspace-v2`. Legacy keys remain untou
 
 First-order paths mirror the source in one finite plane. Second-order paths mirror it sequentially in two distinct planes, then trace intersections backward from the listener. Intersections must be within each rectangle and the rectangular room. Specular-angle validation rejects invalid paths. Mounted panels coat the room boundary instead of replacing it with a displaced plane. Free panels and diagonal bass traps retain finite reflecting and occluding geometry; their treatment switch changes absorption only.
 
-Treatment absorption uses the selected frequency curve and incidence angle at each contact. Overlapping mounted panels use the strongest coefficient at the wall point rather than multiplying duplicate coverage. Opacity shows retained energy with a small visibility floor. Loss is `−10 log10(retained energy)`; distance spreading is excluded. Preset curves are planning references, not claims about a specific product. The NRC-style arithmetic average is informational, not a certified NRC.
+Treatment absorption uses the selected frequency curve directly: retained energy is multiplied by (1 − absorption coefficient) at each contact, without an assumed angle correction. A coefficient of 1 fully absorbs the modeled reflection. Overlapping mounted panels use the strongest coefficient at the wall point rather than multiplying duplicate coverage. Opacity shows retained energy with a small visibility floor. Loss is `−10 log10(retained energy)`; distance spreading is excluded. Preset curves are planning references, not claims about a specific product. The NRC-style arithmetic average is informational, not a certified NRC.
 
 Speaker cabinets, stands and sofa are visual geometry, not acoustic obstacles. Walls are ideal unit-reflectivity planes. The separate Mode tab computes ideal rectangular-room eigenmodes. Reflection rays do not include modal effects, wave interference, phase, scattering, diffraction, calibrated SPL or a full acoustic simulation. Geometry overlap and oversized objects are not automatically resolved. The quality cap uses deterministic surface ordering rather than acoustic importance.
 

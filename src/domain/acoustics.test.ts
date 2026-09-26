@@ -18,6 +18,18 @@ describe('finite plane geometry', () => {
   it('rejects outside sources and invalid repeated reflections', () => { expect(solvePath([-1, 1, 1], [2, 1, 3], [surfaces[0]], room)).toBeNull(); expect(solvePath([1, 1, 1], [2, 1, 3], [surfaces[0], surfaces[0]], room)).toBeNull() })
 })
 describe('treatment mounting and attenuation', () => {
+  it('fully absorbs an oblique 20 kHz reflection with the 4-inch preset', () => {
+    const panel = mountTreatmentAtPoint({ ...makeObject('panel', 'p'), size: [5, 3, inches(4)] }, 'front', [2, 1.5, 0], room)
+    const d: Design = { version: 1, name: 'test', room, measurements: [], objects: [
+      { ...makeObject('speaker', 's'), position: [1, 1, 1], tweeter: 0 },
+      { ...makeObject('listener', 'l'), position: [4, 1, 3] }, panel,
+    ] }
+    const path = computePaths(d, { ...settings, listener: 'l', frequency: 20000, second: false }, { panel: true, bass: true }).find(p => p.surfaces[0] === 'Front wall')!
+    expect(path).toBeDefined()
+    expect(path.energy).toBe(0)
+    expect(path.segmentEnergies).toEqual([1, 0])
+  })
+
   it('snaps all six mounts and diagonal corners', () => { const base = makeObject('panel', 'p'); for (const mount of ['front', 'rear', 'left', 'right', 'ceiling', 'floor'] as const) { const o = mountObject({ ...base, mount }, room); const s = treatmentSurface(o); expect(s.center.every(Number.isFinite)).toBe(true); expect(Math.hypot(...s.normal)).toBeCloseTo(1); if (mount === 'ceiling') expect(s.normal[1]).toBeCloseTo(-1); if (mount === 'left') expect(s.normal[0]).toBeCloseTo(1) } const trap = mountObject({ ...makeObject('bass', 'b'), mount: 'front' }, room); expect(trap.rotation[1]).toBeCloseTo(Math.PI / 4) })
   it('orients a reflection absorber from the wall that owns its contact point', () => { const base = makeObject('panel', 'p'); const cases: [Parameters<typeof mountTreatmentAtPoint>[1], Vec3, Vec3][] = [['front', [2, 1, 0], [0, 0, 1]], ['rear', [2, 1, room.length], [0, 0, -1]], ['left', [0, 1, 2], [1, 0, 0]], ['right', [room.width, 1, 2], [-1, 0, 0]], ['floor', [2, 0, 2], [0, 1, 0]], ['ceiling', [2, room.height, 2], [0, -1, 0]]]; for (const [wall, point, expected] of cases) treatmentSurface(mountTreatmentAtPoint(base, wall, point, room)).normal.forEach((value, i) => expect(value).toBeCloseTo(expected[i])) })
   it('applies selected-band coefficients, segment attenuation and caps second-order paths', () => { const panel = mountTreatmentAtPoint({ ...makeObject('panel', 'p'), size: [5, 3, 0.1], curve: undefined, absorption: { '125': 0.5, '250': 0.5, '500': 0.5, '1000': 0.5, '2000': 0.5, '4000': 0.5 } }, 'front', [2, 1, 0], room); const speaker = { ...makeObject('speaker', 's'), position: [2, 1, 1] as Vec3, tweeter: 0 }; const listener = { ...makeObject('listener', 'l'), position: [2, 1, 3] as Vec3 }; const d: Design = { version: 1, name: 'test', room, measurements: [], objects: [speaker, listener, panel] }; const paths = computePaths(d, { ...settings, listener: 'l', second: false }, { panel: true, bass: true }); const reflection = paths.find(p => p.surfaces[0] === 'Front wall')!; expect(reflection.energy).toBeCloseTo(0.5); expect(reflection.segmentEnergies).toEqual([1, 0.5]); expect(paths.some(p => p.order === 1)).toBe(true); expect(computePaths(d, { ...settings, listener: 'l', enabled: false }, { panel: true, bass: true })).toEqual([]) })

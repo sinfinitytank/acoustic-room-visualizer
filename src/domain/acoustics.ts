@@ -312,11 +312,8 @@ export function computePaths(
           }
         const segmentEnergies = [1];
         for (let i = 0; i < seq.length; i++) {
-          const incoming = sub(points[i + 1], points[i]);
-          const outgoing = sub(points[i + 2], points[i + 1]);
-          const incidence = reflectionCosine(incoming, outgoing, seq[i].normal);
-          // Grazing incidence presents less absorbing area to the wave.
-          const reflected = Math.max(0, 1 - retained(seq[i], points[i + 1]) * incidence);
+          // Apply the frequency coefficient directly; no assumed angle correction.
+          const reflected = Math.max(0, 1 - retained(seq[i], points[i + 1]));
           segmentEnergies.push(segmentEnergies[i] * reflected);
         }
         const energy = segmentEnergies.at(-1)!;
@@ -351,14 +348,6 @@ export function computePaths(
       }
     }
   return output;
-}
-
-function reflectionCosine(incoming: Vec3, outgoing: Vec3, normal: Vec3) {
-  const incomingLength = distance([0, 0, 0], incoming) || 1;
-  const outgoingLength = distance([0, 0, 0], outgoing) || 1;
-  // For a specular reflection these are equal; averaging both ray directions
-  // also keeps the attenuation tied to the actual incident/reflected geometry.
-  return Math.min(1, (Math.abs(dot(incoming, normal)) / incomingLength + Math.abs(dot(outgoing, normal)) / outgoingLength) / 2);
 }
 
 // A destination from another project/import must never silently suppress rays.

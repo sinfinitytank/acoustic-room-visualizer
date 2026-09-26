@@ -26,6 +26,7 @@ Build a local, browser-based listening-room planner where users can arrange room
 
 - Reflection paths use finite-plane image-source geometric approximations.
 - First- and second-order paths are supported.
+- Reflection energy uses (1 − frequency-specific absorption coefficient) per contact without a cosine multiplier; coefficient 1 retains zero energy even at oblique incidence.
 - Mounted treatments attenuate existing room-wall contacts without changing reflection coordinates, wall sequences, path IDs, counts, or animation routes when treatment is toggled.
 - The Ray inspector displays all calculated paths and allows viewport/path selection.
 - Ray markers run in synchronized cycles: each begins together, completed routes wait at their listener, and all restart after the longest route arrives.
@@ -53,7 +54,7 @@ Build a local, browser-based listening-room planner where users can arrange room
 
 ## Active working-tree changes
 
-The v1.2 implementation and documentation are release-ready. There is no known active feature work after the v1.2 release commit.
+A CSS-only UI polish pass standardizes shared spacing, control heights, heading hierarchy, card actions, and icon sizing. Header and viewport toolbars wrap at narrow widths, and the mobile scene reserves enough height for its title and empty-state card. Existing component structure, workflows, application logic, and data remain unchanged. Changes are local and have not been pushed. GitHub Pages deployment configuration is also present; it builds the static Vite app on pushes to `v1.2`.
 
 Before modifying related functionality, inspect the current working tree and relevant implementation files. Do not assume previous Codex requests left partial changes.
 
@@ -65,14 +66,16 @@ Before modifying related functionality, inspect the current working tree and rel
 - Room-mode calculations use ideal rigid rectangular-room assumptions and do not model damping, source-dependent response, furniture effects, or treatment effectiveness.
 - The production build has an existing large-bundle advisory.
 - Three.js reports non-blocking development-console deprecations for `Clock` and `PCFSoftShadowMap` during browser tests.
-- The legacy responsive-layout browser assertion currently detects horizontal overflow at a 390 px viewport and needs a focused layout fix.
+- The previous 390 px horizontal overflow is resolved by wrapping viewport toolbar groups within the available width.
 
 ## Current verification
 
-Release verification on 2026-09-14:
+Absorption correction: `npm run verify` passes (build, lint, 48 domain tests), including an oblique 20 kHz reflection with the 4-inch preset. Existing large-bundle advisory remains.
+
+UI polish verification on 2026-09-14:
 
 - `npm run verify` passes: production build, lint, and all 47 domain tests.
-- Current feature-focused browser scenarios pass. The latest full run passed 9 of 11 before one remaining obsolete transparency-toggle step was removed; the known 390 px horizontal-overflow assertion still needs a focused layout fix. Welcome-screen and control locators now match the current UI.
+- Full Playwright suite passes: 11 of 11 scenarios, including responsive layout. All seven tabs were also checked at 1440, 800, 390, and 320 px with no page or sidebar horizontal overflow. Desktop dark/light and mobile layouts were visually reviewed.
 - Domain coverage includes units, reflection geometry and stability, treatment attachment/footprints, ray classification, panel cluster placement, workspace validation, history, and Undo/Redo.
 - Browser coverage includes library workflows, milestones and branching, modes, ray filters, optimization, panel sizing, import/export, themes, responsive layout, camera views, gizmo movement, and measurements.
 - The build retains its known large-chunk advisory; browser runs retain the non-blocking Three.js deprecation warnings listed above.

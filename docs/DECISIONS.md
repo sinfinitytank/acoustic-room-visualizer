@@ -45,3 +45,11 @@ All lengths remain stored in metres. Project conversions use 1 ft = 30 cm and 12
 Mounted coverage checks the actual finite footprint projected along the room-surface normal and verifies attachment (including the existing 8 mm backing gap), rather than trusting mount metadata. Attenuation and ray filters share this lookup. At least one contact must be covered for a reflected path to be Treated. Optimization skips rays already treated by retained objects and reports ray treatment using the same contact-coverage classifier as viewport and inspector filters.
 
 Panel optimization weights first-order contacts at 2 and secondary contacts at 0.5, accumulating repeated contacts. Candidate search includes independent rectangle-edge events as well as cluster centers and aligned placements. A 5 cm separation and modest alignment/centering preferences favor practical layouts; candidates scoring below 0.6 are omitted so a lone secondary contact does not require another panel. These are layout heuristics, not predicted acoustic performance. Selected sizes, orientations, surface bounds, replacement/Undo behavior and object capacity remain in force.
+
+## 2026-09-14 — Apply absorption coefficients directly
+
+Reflection energy multiplies by (1 − frequency-specific absorption coefficient) per contact. No cosine correction is applied: angle-dependent absorption requires measured data or a material model that this planner does not have.
+
+## 2026-09-27 — Static GitHub Pages deployment
+
+The application is compatible with GitHub Pages because it has no server-side runtime requirements. The deployment workflow builds the Vite bundle from `v1.2` and publishes its `dist` output. The Vite base path changes only inside GitHub Actions so project-site asset URLs resolve under `/acoustic-room-visualizer/` while local development stays at the root URL.

@@ -112,3 +112,138 @@ button,a,input,select{transition:background .16s,border-color .16s,box-shadow .1
   .template-actions{flex-direction:row;flex-wrap:wrap;padding:6px 0 0;border-left:0;border-top:1px solid var(--border)}
   .template-actions>button{width:auto;flex:1 1 55px;justify-content:center}
 }
+
+/* Shared UI metrics: preserve component structure and the existing palette. */
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --control-height: 36px;
+  --control-radius: 7px;
+  --card-radius: 10px;
+}
+.studio button { line-height: 1.4; }
+.studio .panel-top { padding: var(--space-2) var(--space-3); min-height: 52px; }
+.studio .panel-top > button {
+  width: 32px; height: 32px; min-height: 32px; padding: 6px;
+  display: grid; place-items: center;
+}
+.studio .panel-tabs { gap: var(--space-1); padding: var(--space-1); margin: 0 12px 8px; }
+.studio .panel-tabs button { min-height: 32px; padding: 6px 4px; gap: 6px; }
+.studio .panel-tabs .ui-icon { width: 16px; height: 16px; flex-basis: 16px; }
+.studio .panel-scroll { padding: 0 12px 16px; }
+.studio details.control-section { padding: var(--space-3) !important; margin-bottom: var(--space-2); border-radius: var(--card-radius); }
+.studio .section-heading { min-height: 24px; margin-bottom: var(--space-3); gap: var(--space-2); }
+.studio .section-heading h2 { color: var(--text); font-size: 15px; font-weight: 600; line-height: 1.4; }
+.studio .section-heading > .badge { font-size: 11px; padding: 2px 6px; }
+.studio .section-heading > button { min-height: 32px; font-size: 13px; padding: 6px 8px; }
+.studio .control-section .hint { font-size: 13px; line-height: 1.5; margin: var(--space-2) 0; }
+.studio .number-row { gap: var(--space-2); margin: var(--space-2) 0; }
+.studio .number-row > span { font-size: 14px; max-width: none; min-width: 0; overflow-wrap: anywhere; }
+.studio .number-row > div {
+  min-height: var(--control-height); padding: 7px 8px;
+  border-radius: var(--control-radius); gap: var(--space-1);
+}
+.studio .number-row input { padding: 0; line-height: 20px; }
+.studio .number-row small { flex-shrink: 0; font-size: 12px; }
+.studio .text-field { gap: 6px; margin: var(--space-3) 0; font-size: 14px; }
+.studio .text-field :is(input:not([type=range]), select),
+.studio .object-search {
+  min-height: var(--control-height); padding: 7px 10px; border-radius: var(--control-radius);
+}
+.studio .room-dimensions-grid, .studio .mode-range-fields { gap: var(--space-2); }
+.studio :is(.room-dimensions-grid, .mode-range-fields, .curve-row) .number-row { margin: 0; }
+.studio :is(.room-dimensions-grid, .mode-range-fields) .number-row > div { width: 100%; }
+.studio .toggle-row { padding: 6px 0; gap: var(--space-2); font-size: 14px; }
+.studio .toggle-row > span { white-space: normal; overflow: visible; overflow-wrap: anywhere; }
+.studio .toggle-row input { width: 16px; height: 16px; }
+.studio .layer-toggles { gap: var(--space-2); }
+.studio .layer-toggles .toggle-row { font-size: 13px; }
+.studio :is(.button-pair, .segmented) { gap: var(--space-2); margin: var(--space-3) 0; }
+.studio :is(.button-pair, .segmented, .surface-buttons, .surface-panel-orientation, .absorber-placement-actions) button,
+.studio .wide-button {
+  min-height: var(--control-height); padding: 7px 8px; font-size: 13px; border-radius: var(--control-radius);
+}
+.studio :is(.template-card, .save-timeline li, .demo-card) { padding: var(--space-3) !important; border-radius: var(--card-radius); }
+.studio :is(.template-list, .save-timeline, .object-grid, .treatment-ray-grid) { gap: var(--space-2); }
+.studio .template-card { grid-template-columns: minmax(0, 1fr) 88px; gap: var(--space-3); }
+.studio .template-heading { gap: var(--space-3); }
+.studio :is(.template-heading, .save-timeline) h3 { font-size: 15px; line-height: 1.4; }
+.studio .library-type-icon { width: 40px; height: 48px; flex-basis: 40px; }
+.studio .library-type-icon .ui-icon { width: 28px; height: 28px; }
+.studio .template-actions { gap: var(--space-1); padding-left: var(--space-2); }
+.studio .template-actions > button { min-height: 32px; padding: 6px; font-size: 13px; gap: 6px; }
+.studio .template-actions .ui-icon { width: 16px; height: 16px; flex-basis: 16px; }
+.studio .object-grid .object-row { display: flex; flex-direction: column; }
+.studio .object-grid .object-row > button:first-child { flex: 1; padding: 10px; gap: 8px; }
+.studio .object-grid .object-row .object-visibility { min-height: 32px; margin-top: auto; padding: 6px 10px; }
+.studio .object-grid .object-symbol { flex: 0 0 20px; }
+.studio .object-grid .object-row > button:first-child > span:last-child { width: auto; }
+.studio .ray-subheading { margin: 12px 0 8px; font-size: 12px; letter-spacing: .7px; }
+.studio .ray-controls .segmented { gap: var(--space-1); }
+.studio .ray-controls .surface-toggle-grid { gap: var(--space-2); }
+.studio .ray-controls .surface-toggle-grid button { min-height: 36px; }
+.studio .treatment-ray-card { padding: 10px; grid-template-columns: 18px minmax(0, 1fr); gap: 6px; }
+.studio .treatment-ray-copy small, .studio .treatment-ray-state { font-size: 12px; }
+.studio .optimization-wall-row { padding: var(--space-2) 0; gap: var(--space-2); }
+.studio .optimization-wall-row .text-field { margin: 0; font-size: 12px; }
+.studio .optimization-wall-row select { font-size: 13px !important; padding: 7px 6px; }
+.studio .ray-filter-row { gap: var(--space-2); }
+.studio .ray-filter-row :is(select, button) { min-height: 36px; font-size: 12px; padding: 7px 8px; }
+.studio .ray-table { font-size: 12px; }
+.studio .ray-table th { font-size: 11px; }
+.studio .mode-kind-filters { gap: var(--space-1); margin: var(--space-2) 0; }
+.studio .mode-kind-filters button { min-height: 36px; font-size: 13px; padding: 7px 8px; }
+.studio .curve-row { gap: var(--space-2); }
+.studio .curve-row > button { min-height: 36px; padding: 7px 8px; }
+.studio .file-actions > button { min-height: 64px !important; padding: 12px !important; gap: 12px; }
+.studio .save-timeline footer button { min-height: 36px; padding: 7px 10px; }
+.studio .history-tools { flex-wrap: wrap; gap: var(--space-2); }
+.studio .viewport-toolbar { flex-wrap: wrap; gap: var(--space-2); padding: 10px 16px; }
+.studio :is(.camera-tools, .display-tools) { min-width: 0; flex-wrap: wrap; }
+.studio .display-tools { margin-left: auto; gap: var(--space-1); }
+.studio .unit-switch { margin-right: var(--space-2); }
+.studio .header-actions button { min-height: 36px; height: auto; }
+.studio .header-actions .ui-icon { flex-shrink: 0; }
+.studio .notification { width: max-content; max-width: min(480px, calc(100vw - 32px)); padding: 12px 16px; gap: 12px; }
+.studio .notification button { flex: 0 0 32px; height: 32px; padding: 0; }
+.guide-modal { padding: 24px; border-radius: 12px; }
+.guide-modal p { font-size: 14px; line-height: 1.6; }
+.confirm-modal { min-width: 0; width: min(520px, 100%); }
+.confirm-modal input { min-height: 40px; padding: 8px 12px; font-size: 16px; }
+.guide-modal .danger { min-height: 40px; font-size: 14px; font-weight: 600; }
+.hero-card { min-width: 0; }
+.hero-card button { min-width: 0; }
+@container (max-width: 340px) {
+  .studio .template-card { grid-template-columns: minmax(0, 1fr); }
+  .studio .template-actions { padding: 8px 0 0; }
+  .studio .number-row > div { width: 104px; }
+  .studio .room-dimensions-grid { gap: 6px; }
+}
+@media (max-width: 800px) {
+  .studio .app-header { flex-wrap: wrap; height: auto; padding: 10px 12px; gap: 8px; }
+  .studio { grid-template-rows: auto 570px auto; }
+  .studio .header-actions { flex-wrap: wrap; padding: 0; gap: 4px; }
+  .studio .viewport-toolbar { padding: 8px 12px; }
+}
+@media (max-width: 700px) {
+  .studio { grid-template-rows: auto 450px minmax(400px, 1fr); }
+  .studio.is-collapsed { grid-template-rows: auto minmax(0, 1fr); }
+  .hero-screen { padding: 16px; }
+  .hero-card { margin: 0; padding: 28px 20px; width: 100%; }
+  .hero-card h1 { font-size: 32px; letter-spacing: -1px; }
+  .studio .scene-heading { max-width: calc(100% - 32px); left: 16px; }
+}
+@media (max-width: 700px) {
+  .studio .brand { flex: 1 0 100%; white-space: nowrap; }
+  .studio .brand-mark { flex-shrink: 0; }
+  .studio .header-actions { width: 100%; }
+  .studio .header-actions .theme-button { margin-left: auto; }
+}
+.studio .panel-scroll details.control-section { padding: var(--space-3) !important; margin-bottom: var(--space-2); }
+.studio .panel-scroll .section-heading { margin-bottom: var(--space-3); }
+.studio .panel-scroll details.control-section:not([open]) .section-heading { margin-bottom: 0; }
+@media (max-width: 700px) {
+  .studio .scene-container { min-height: 420px; }
+}
